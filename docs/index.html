@@ -1,0 +1,28 @@
+<!-- docs/index.html -->
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><title>Hanu-Cordbot Admin</title>
+<style>body{font-family:system-ui;padding:2rem;max-width:600px;margin:auto}
+button{padding:.6rem 1.2rem;font-size:1rem}#log{white-space:pre;border:1px solid #ccc;
+padding:1rem;margin-top:1rem;font-family:ui-monospace,monospace}</style></head><body>
+<h1>Hanu-Cordbot – Manual Run</h1>
+<label>AUTH_TOKEN:
+<input id="tokenInput" type="password" size="42"
+       placeholder="paste once; stored only in this tab"></label><br><br>
+<button id="runBtn">▶︎ Run / Ping Worker</button>
+<pre id="log">Press “Run” to trigger the Worker…</pre>
+<script>
+const WORKER_URL="https://hanu-cordbot.snacky496.workers.dev/run";
+const input=document.getElementById("tokenInput");
+const log=document.getElementById("log");
+document.getElementById("runBtn").onclick=async()=>{
+  const token=input.value.trim(); if(!token){alert("Paste AUTH_TOKEN");return;}
+  sessionStorage.setItem("AUTH_TOKEN",token);
+  log.textContent="⏳ Calling the Worker…";
+  try{
+    const res=await fetch(WORKER_URL,{headers:{Authorization:`Bearer ${token}`}});
+    const txt=await res.text();
+    log.textContent=`HTTP ${res.status}\n\n${txt.replace(/\\n/g,"\n")}`;
+  }catch(e){log.textContent="⚠️ "+e;}
+};
+input.value=sessionStorage.getItem("AUTH_TOKEN")||"";
+</script></body></html>
