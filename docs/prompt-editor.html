@@ -4,31 +4,317 @@
   <meta charset="utf-8">
   <title>HANU Prompt Editor</title>
   <link href="shared/common.css" rel="stylesheet">
-  <style>
-    .section { border: 2px solid #e0e0e0; padding: 20px; margin: 15px 0; border-radius: 8px; background: #fafafa; }
-    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .section input[name="section_name"] { font-weight: bold; font-size: 16px; border: 1px solid #ccc; padding: 8px; width: 300px; }
-    .section textarea { width: 100%; min-height: 150px; font-family: 'Courier New', monospace; font-size: 14px; }
-    .preview { margin-top: 15px; padding: 15px; background: white; border: 1px solid #ddd; border-radius: 4px; }
-    .preview h1, .preview h2, .preview h3 { color: #333; }
-    .add-section-btn { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 10px 5px; }
-    .remove-section-btn { background: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; }
-    .test-area { background: #e8f4f8; padding: 20px; border-radius: 8px; margin: 20px 0; }
-    .test-result { background: white; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
-  </style>
+  <!-- Discord-style emoji rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* Discord-style emoji rendering */
+    img.emoji {
+      height: 1em;
+      width: 1em;
+      margin: 0 0.05em 0 0.1em;
+      vertical-align: -0.1em;
+    }
+    
+    /* Discord Theme */
+    body { 
+      font-family: "Whitney", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background: #36393f;
+      color: #dcddde;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    /* Navigation */
+    .nav-bar {
+      background: #2f3136;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-links a {
+      color: #00d4aa;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: 500;
+    }
+    .nav-links a:hover {
+      color: #00f5cc;
+    }
+    
+    /* Header */
+    .prompt-header {
+      background: linear-gradient(135deg, #5865f2 0%, #3ba55d 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .prompt-header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+    
+    /* Section */
+    .section {
+      background: #2f3136;
+      border: 2px solid #40444b;
+      padding: 25px;
+      margin: 20px 0;
+      border-radius: 8px;
+      transition: border-color 0.2s;
+    }
+    .section:hover {
+      border-color: #5865f2;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #40444b;
+    }
+    .section input[name="section_name"] {
+      font-weight: 600;
+      font-size: 18px;
+      border: none;
+      background: #40444b;
+      color: #dcddde;
+      padding: 10px 15px;
+      border-radius: 6px;
+      width: 300px;
+    }
+    .section textarea {
+      width: 100%;
+      min-height: 200px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 14px;
+      background: #40444b;
+      color: #dcddde;
+      border: 1px solid #40444b;
+      border-radius: 6px;
+      padding: 15px;
+      resize: vertical;
+      line-height: 1.4;
+    }
+    .section textarea:focus {
+      outline: none;
+      border-color: #5865f2;
+    }
+    .preview {
+      margin-top: 20px;
+      padding: 20px;
+      background: #36393f;
+      border: 1px solid #40444b;
+      border-radius: 6px;
+      border-left: 4px solid #00d4aa;
+    }
+    .preview h1, .preview h2, .preview h3 {
+      color: #dcddde;
+      margin-top: 0;
+    }
+    .preview p {
+      color: #b9bbbe;
+      line-height: 1.6;
+    }
+    .preview code {
+      background: #2f3136;
+      color: #00d4aa;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    
+    /* Buttons */
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    .btn-primary {
+      background: #5865f2;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #4752c4;
+      transform: translateY(-1px);
+    }
+    .btn-success {
+      background: #3ba55d;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #2d7d42;
+      transform: translateY(-1px);
+    }
+    .btn-danger {
+      background: #ed4245;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #c23b3d;
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: #4f545c;
+      color: #dcddde;
+    }
+    .btn-secondary:hover {
+      background: #5d6269;
+      transform: translateY(-1px);
+    }
+    
+    /* Action Bar */
+    .action-bar {
+      background: #2f3136;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 30px 0;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    
+    /* Test Area */
+    .test-area {
+      background: #2f3136;
+      padding: 25px;
+      border-radius: 8px;
+      margin: 30px 0;
+      border-left: 4px solid #5865f2;
+    }
+    .test-area h3 {
+      color: #dcddde;
+      margin: 0 0 15px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .test-content {
+      width: 100%;
+      min-height: 120px;
+      background: #40444b;
+      color: #dcddde;
+      border: 1px solid #40444b;
+      border-radius: 6px;
+      padding: 15px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 13px;
+      resize: vertical;
+    }
+    .test-content:focus {
+      outline: none;
+      border-color: #5865f2;
+    }
+    .test-controls {
+      margin: 15px 0;
+      display: flex;
+      gap: 10px;
+    }
+    .test-result {
+      background: #36393f;
+      padding: 20px;
+      margin: 15px 0;
+      border: 1px solid #40444b;
+      border-radius: 6px;
+      border-left: 4px solid #00d4aa;
+    }
+    .test-result h4 {
+      color: #dcddde;
+      margin: 0 0 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .test-result-content {
+      background: #2f3136;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 10px 0;
+      font-family: 'Consolas', 'Monaco', monospace;
+      color: #b9bbbe;
+      white-space: pre-wrap;
+      line-height: 1.4;
+    }
+    
+    /* Status Messages */
+    .save-status {
+      margin: 20px 0;
+    }
+    .status-success {
+      background: #2d4a3a;
+      color: #3ba55d;
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 4px solid #3ba55d;
+    }
+    .status-error {
+      background: #4a2d2d;
+      color: #ed4245;
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 4px solid #ed4245;
+    }
+    .status-loading {
+      background: #3d3d4a;
+      color: #5865f2;
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 4px solid #5865f2;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container { padding: 15px; }
+      .section-header { flex-direction: column; gap: 15px; }
+      .action-bar { flex-direction: column; }
+      .test-controls { flex-direction: column; }
+    }
+    
+    /* Utility */
+    .hidden { display: none !important; }
+  </style>
 </head>
 <body>
   <div class="container">
     <!-- Navigation -->
-    <div style="margin-bottom: 20px;">
-      <a href="index.html">← Back to Home</a> |
-      <a href="dashboard.html">Feed Management</a> |
-      <a href="stats.html">Statistics</a>
+    <div class="nav-bar">
+      <div class="nav-links">
+        <a href="index.html">🏠 Home</a>
+        <a href="dashboard.html">🤖 Dashboard</a>
+        <a href="stats.html">📊 Statistics</a>
+      </div>
+      <div style="color: #72767d; font-size: 14px;">
+        Prompt Configuration
+      </div>
     </div>
 
-    <h1>✏️ System Prompt Editor</h1>
-    <p>Configure AI system prompts that control how the bot processes and formats RSS feeds.</p>
+    <!-- Header -->
+    <div class="prompt-header">
+      <h1>✏️ System Prompt Editor</h1>
+      <p>Configure AI system prompts that control how the bot processes RSS feeds</p>
+    </div>
 
     <!-- Main Editor -->
     <div id="main-editor" class="hidden">
@@ -36,27 +322,27 @@
         <!-- Dynamic sections will be inserted here -->
       </div>
 
-      <div style="margin: 20px 0; text-align: center;">
-        <button onclick="addSection()" class="add-section-btn">➕ Add Section</button>
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <button onclick="addSection()" class="btn btn-success">➕ Add Section</button>
         <button onclick="savePrompt()" class="btn btn-primary">💾 Save Prompt</button>
         <button onclick="loadPrompt()" class="btn btn-secondary">🔄 Reload</button>
+        <button onclick="exportPrompt()" class="btn btn-secondary">📤 Export</button>
       </div>
 
       <!-- Prompt Testing -->
       <div class="test-area">
-        <h3>🧪 Test Prompt</h3>
-        <p>Test your prompt with sample RSS feed content:</p>
+        <h3>🧪 Test Prompt with AI</h3>
+        <p style="color: #b9bbbe; margin-bottom: 15px;">Test your prompt configuration with sample RSS feed content to see how the AI will respond.</p>
         
-        <div class="form-group">
-          <label><strong>Sample Feed Content:</strong></label>
-          <textarea id="test-content" rows="6" placeholder="Paste RSS feed content here for testing..." style="width: 100%;">
+        <label style="display: block; color: #dcddde; font-weight: 600; margin-bottom: 8px;">Sample Feed Content:</label>
+        <textarea id="test-content" class="test-content" placeholder="Paste RSS feed content here for testing...">
 Tiêu đề: CLB Thanh niên vận động hiến máu thông báo
 Nội dung: Thông báo đến các bạn sinh viên về chương trình hiến máu nhân đạo sẽ được tổ chức vào ngày 25/7/2025 tại hội trường A1. Mời các bạn tham gia ủng hộ hoạt động ý nghĩa này.
 Ngày đăng: 2025-07-21T08:00:00
-          </textarea>
-        </div>
+        </textarea>
 
-        <div style="margin: 10px 0;">
+        <div class="test-controls">
           <button onclick="testPrompt()" class="btn btn-primary">🚀 Test with AI</button>
           <button onclick="clearTest()" class="btn btn-secondary">🗑️ Clear</button>
         </div>
@@ -65,7 +351,7 @@ Ngày đăng: 2025-07-21T08:00:00
       </div>
 
       <!-- Save Status -->
-      <div id="save-status" style="margin: 20px 0;"></div>
+      <div id="save-status" class="save-status"></div>
     </div>
   </div>
 
@@ -79,6 +365,7 @@ Ngày đăng: 2025-07-21T08:00:00
     window.addEventListener('hanu-authenticated', async () => {
       document.getElementById('main-editor').classList.remove('hidden');
       await loadPrompt();
+      parseEmojis();
     });
 
     // Load current system prompt
@@ -88,18 +375,20 @@ Ngày đăng: 2025-07-21T08:00:00
         sections = data.sections || [
           {
             name: "System Role",
-            content: "You are a Vietnamese university news assistant. Your job is to process RSS feed content and create engaging summaries for Discord posts."
+            content: "Bạn là trợ lý tin tức của trường Đại học Hà Nội. Nhiệm vụ của bạn là xử lý nội dung RSS feed và tạo tóm tắt hấp dẫn cho các bài đăng Discord."
           },
           {
             name: "Output Format",
-            content: "Format your response as:\n\n**Tóm tắt**: Brief summary in Vietnamese\n**Chi tiết**: Detailed information\n**Liên quan**: Relevant information for students"
+            content: "Định dạng phản hồi của bạn như sau:\n\n**Tóm tắt**: Tóm tắt ngắn gọn bằng tiếng Việt\n**Chi tiết**: Thông tin chi tiết\n**Liên quan**: Thông tin liên quan đến sinh viên"
           }
         ];
 
         renderSections();
         updateAllPreviews();
+        parseEmojis();
       } catch (error) {
         console.error('Failed to load prompt:', error);
+        showError('Failed to load prompt: ' + error.message);
         // Initialize with default sections if load fails
         sections = [{
           name: "Default Section",
@@ -117,14 +406,19 @@ Ngày đăng: 2025-07-21T08:00:00
         <div class="section" data-index="${index}">
           <div class="section-header">
             <input type="text" name="section_name" value="${section.name}" 
-                   onchange="updateSectionName(${index}, this.value)" placeholder="Section Name">
-            <button onclick="removeSection(${index})" class="remove-section-btn">🗑️ Remove</button>
+                   onchange="updateSectionName(${index}, this.value)" 
+                   placeholder="Section Name">
+            <button onclick="removeSection(${index})" class="btn btn-danger">🗑️ Remove</button>
           </div>
           
-          <div class="form-group">
-            <label><strong>Content (supports Markdown):</strong></label>
-            <textarea name="section_content" onchange="updateSectionContent(${index}, this.value)" 
-                      oninput="updatePreview(${index})" rows="8">${section.content}</textarea>
+          <div style="margin-bottom: 15px;">
+            <label style="display: block; color: #dcddde; font-weight: 600; margin-bottom: 8px;">
+              Content (supports Markdown):
+            </label>
+            <textarea name="section_content" 
+                      onchange="updateSectionContent(${index}, this.value)" 
+                      oninput="updatePreview(${index})" 
+                      rows="8">${section.content}</textarea>
           </div>
           
           <div class="preview" id="preview-${index}">
@@ -158,7 +452,11 @@ Ngày đăng: 2025-07-21T08:00:00
       
       if (preview && textarea) {
         try {
-          preview.innerHTML = marked.parse(textarea.value);
+          if (typeof marked !== 'undefined') {
+            preview.innerHTML = marked.parse(textarea.value);
+          } else {
+            preview.innerHTML = '<em>Markdown preview unavailable</em>';
+          }
         } catch (error) {
           preview.innerHTML = '<em>Markdown preview error</em>';
         }
@@ -177,6 +475,7 @@ Ngày đăng: 2025-07-21T08:00:00
         content: "Enter content here..."
       });
       renderSections();
+      parseEmojis();
     }
 
     // Remove section
@@ -184,28 +483,53 @@ Ngày đăng: 2025-07-21T08:00:00
       if (sections.length > 1 && confirm('Remove this section?')) {
         sections.splice(index, 1);
         renderSections();
+        parseEmojis();
       } else if (sections.length === 1) {
-        alert('Cannot remove the last section');
+        showError('Cannot remove the last section');
       }
     }
 
     // Save prompt
     async function savePrompt() {
       const statusDiv = document.getElementById('save-status');
-      statusDiv.innerHTML = '<div style="padding: 10px; background: #fff3cd; border-radius: 4px;">💾 Saving...</div>';
+      statusDiv.innerHTML = '<div class="status-loading">💾 Saving prompt configuration...</div>';
 
       try {
         await window.HanuAPI.updateSystemPrompt(sections);
-        statusDiv.innerHTML = '<div style="padding: 10px; background: #d4edda; border-radius: 4px;">✅ System prompt saved successfully!</div>';
+        statusDiv.innerHTML = '<div class="status-success">✅ System prompt saved successfully!</div>';
         
         // Clear status after 3 seconds
         setTimeout(() => {
           statusDiv.innerHTML = '';
         }, 3000);
+        
+        parseEmojis();
 
       } catch (error) {
-        statusDiv.innerHTML = `<div style="padding: 10px; background: #f8d7da; border-radius: 4px;">❌ Save failed: ${error.message}</div>`;
+        statusDiv.innerHTML = `<div class="status-error">❌ Save failed: ${error.message}</div>`;
+        parseEmojis();
       }
+    }
+
+    // Export prompt configuration
+    function exportPrompt() {
+      const config = {
+        sections: sections,
+        timestamp: new Date().toISOString(),
+        version: "1.0"
+      };
+      
+      const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `hanu-prompts-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showSuccess('Prompt configuration exported successfully');
     }
 
     // Test prompt with sample content
@@ -214,11 +538,11 @@ Ngày đăng: 2025-07-21T08:00:00
       const resultsDiv = document.getElementById('test-results');
 
       if (!testContent) {
-        alert('Please enter some test content first');
+        showError('Please enter some test content first');
         return;
       }
 
-      resultsDiv.innerHTML = '<div class="test-result">⏳ Testing prompt with AI...</div>';
+      resultsDiv.innerHTML = '<div class="test-result"><h4>⏳ Testing prompt with AI...</h4></div>';
 
       try {
         const response = await window.HanuAPI.testPrompt(testContent);
@@ -226,20 +550,21 @@ Ngày đăng: 2025-07-21T08:00:00
         resultsDiv.innerHTML = `
           <div class="test-result">
             <h4>🤖 AI Response:</h4>
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 10px 0;">
-              ${response.result || 'No response received'}
-            </div>
-            <small style="color: #666;">Generated: ${new Date().toLocaleString()}</small>
+            <div class="test-result-content">${response.result || 'No response received'}</div>
+            <small style="color: #72767d;">Generated: ${new Date().toLocaleString()}</small>
           </div>
         `;
+        
+        parseEmojis();
 
       } catch (error) {
         resultsDiv.innerHTML = `
-          <div class="test-result">
+          <div class="test-result" style="border-left-color: #ed4245;">
             <h4>❌ Test Failed:</h4>
-            <p>${error.message}</p>
+            <div class="test-result-content">${error.message}</div>
           </div>
         `;
+        parseEmojis();
       }
     }
 
@@ -248,6 +573,50 @@ Ngày đăng: 2025-07-21T08:00:00
       document.getElementById('test-content').value = '';
       document.getElementById('test-results').innerHTML = '';
     }
+
+    // Utility functions
+    function showSuccess(message) {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 9999;
+        background: #3ba55d; color: white; padding: 12px 20px;
+        border-radius: 6px; font-weight: 600; font-size: 14px;
+      `;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    function showError(message) {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 9999;
+        background: #ed4245; color: white; padding: 12px 20px;
+        border-radius: 6px; font-weight: 600; font-size: 14px;
+      `;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 5000);
+    }
+
+    // Discord-style emoji rendering
+    function parseEmojis() {
+      if (typeof twemoji !== 'undefined') {
+        twemoji.parse(document.body, {
+          folder: 'svg',
+          ext: '.svg'
+        });
+      }
+    }
+
+    // Initialize emoji parsing when DOM loads
+    document.addEventListener('DOMContentLoaded', parseEmojis);
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', () => {
