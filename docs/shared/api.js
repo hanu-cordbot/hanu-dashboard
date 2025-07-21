@@ -1,129 +1,184 @@
-// Shared API functions for all dashboard pages
-window.HanuAPI = (function() {
+// API wrapper for HANU Dashboard
+import HanuAuth from './auth.js';
+
+class HanuAPI {
+  constructor() {
+    this.baseUrl = 'https://hanu-cordbot.snacky496.workers.dev';
+  }
+  
+  // Generic request method
+  async request(endpoint, options = {}) {
+    const url = `${this.baseUrl}${endpoint}`;
+    const config = {
+      headers: HanuAuth.getAuthHeaders(),
+      ...options
+    };
+    
+    // Add content-type for POST/PUT requests with body
+    if (options.body && typeof options.body === 'object') {
+      config.body = JSON.stringify(options.body);
+      config.headers['Content-Type'] = 'application/json';
+    }
+    
+    try {
+      const response = await fetch(url, config);
+      
+      // Handle authentication errors
+      if (response.status === 401) {
+        HanuAuth.logout();
+        throw new Error('Authentication expired. Please login again.');
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      // Return response for different content types
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      } else {
+        return await response.text();
+      }
+      
+    } catch (error) {
+      console.error(`API request failed: ${endpoint}`, error);
+      throw error;
+    }
+  }
+  
+  // GET request
+  async get(endpoint) {
+    return this.request(endpoint, { method: 'GET' });
+  }
+  
+  // POST request
+  async post(endpoint, body = null) {
+    return this.request(endpoint, {
+      method: 'POST',
+      body
+    });
+  }
+  
+  // PUT request
+  async put(endpoint, body = null) {
+    return this.request(endpoint, {
+      method: 'PUT', 
+      body
+    });
+  }
+  
+  // DELETE request
+  async delete(endpoint) {
+    return this.request(endpoint, { method: 'DELETE' });
+  }
+  
+  // System Status
+  async getSystemStatus() {
+    return this.get('/api/status');
+  }
   
   // Feed Management
-  async function getFeeds() {
-    const response = await window.HanuAuth.apiCall('/api/feeds');
-    return await response.json();
+  async getFeeds() {
+    return this.get('/api/feeds');
   }
-
-  async function addFeed(feedUrl) {
-    const response = await window.HanuAuth.apiCall('/api/feeds', {
-      method: 'POST',
-      body: JSON.stringify({ feedUrl })
-    });
-    return await response.json();
+  
+  async addFeed(feedUrl) {
+    return this.post('/api/feeds', { feedUrl });
   }
-
-  async function removeFeed(feedUrl) {
-    const response = await window.HanuAuth.apiCall('/api/feeds', {
-      method: 'DELETE',
-      body: JSON.stringify({ feedUrl })
-    });
-    return await response.json();
+  
+  async removeFeed(feedUrl) {
+    return this.delete(`/api/feeds?url=${encodeURIComponent(feedUrl)}`);
   }
-
-  async function updateFeedMapping(feedUrl, channelId) {
-    const response = await window.HanuAuth.apiCall('/api/feed-mappings', {
-      method: 'POST',
-      body: JSON.stringify({ feedUrl, channelId })
-    });
-    return await response.json();
+  
+  async updateFeedMapping(feedUrl, channelId) {
+    return this.post('/api/feed-mappings', { feedUrl, channelId });
   }
-
-  async function updateFeedGroup(feedUrl, groupName) {
-    const response = await window.HanuAuth.apiCall('/api/feed-groups', {
-      method: 'POST', 
-      body: JSON.stringify({ feedUrl, groupName })
-    });
-    return await response.json();
+  
+  async updateFeedGroup(feedUrl, groupName) {
+    return this.post('/api/feed-groups', { feedUrl, groupName });
   }
-
+  
   // Channel Management
-  async function getChannels() {
-    const response = await window.HanuAuth.apiCall('/api/channels');
-    return await response.json();
+  async getChannels() {
+    return this.get('/api/channels');
   }
-
-  async function addChannel(channelId) {
-    const response = await window.HanuAuth.apiCall('/api/channels', {
-      method: 'POST',
-      body: JSON.stringify({ channelId })
-    });
-    return await response.json();
+  
+  async addChannel(channelId, name = null, type = 'text') {
+    return this.post('/api/channels', { channelId, name, type });
   }
-
+  
+  async removeChannel(channelId) {
+    return this.delete(`/api/channels?id=${channelId}`);
+  }
+  
+  // Group Management
+  async getGroups() {
+    return this.get('/api/groups');
+  }
+  
+  async addGroup(groupName) {
+    return this.post('/api/groups', { groupName });
+  }
+  
+  async removeGroup(groupName) {
+    return this.delete(`/api/groups?name=${encodeURIComponent(groupName)}`);
+  }
+  
+  async renameGroup(oldName, newName) {
+    return this.put('/api/groups', { oldName, newName });
+  }
+  
   // System Prompts
-  async function getSystemPrompt() {
-    const response = await window.HanuAuth.apiCall('/api/prompt');
-    return await response.json();
+  async getSystemPrompt() {
+    return this.get('/api/prompt');
   }
-
-  async function updateSystemPrompt(sections) {
-    const response = await window.HanuAuth.apiCall('/api/prompt', {
-      method: 'POST',
-      body: JSON.stringify({ sections })
-    });
-    return await response.json();
+  
+  async updateSystemPrompt(sections) {
+    return this.post('/api/prompt', { sections });
   }
-
-  async function testPrompt(content) {
-    const response = await window.HanuAuth.apiCall('/api/prompt/test', {
-      method: 'POST',
-      body: JSON.stringify({ content })
-    });
-    return await response.json();
+  
+  async testPrompt(content) {
+    return this.post('/api/prompt/test', { content });
   }
-
-  // System Status
-  async function getSystemStatus() {
-    const response = await window.HanuAuth.apiCall('/api/status');
-    return await response.json();
+  
+  // Statistics
+  async getSystemStats() {
+    return this.get('/api/stats');
   }
-
-  async function runBotJob() {
-    const response = await window.HanuAuth.apiCall('/run', {
-      method: 'POST'
-    });
-    return await response.text();
+  
+  async getFeedPerformance() {
+    return this.get('/api/stats/feeds');
   }
-
-  // System Stats
-  async function getSystemStats() {
-    const response = await window.HanuAuth.apiCall('/api/stats');
-    return await response.json();
+  
+  async getChannelStats() {
+    return this.get('/api/stats/channels');
   }
-
-  // Utilities
-  async function clearCache() {
-    const response = await window.HanuAuth.apiCall('/api/cache', {
-      method: 'DELETE'
-    });
-    return await response.json();
+  
+  // Bot Controls
+  async runBot() {
+    return this.post('/run');
   }
-
-  // Public API
-  return {
-    // Feed management
-    getFeeds,
-    addFeed,
-    removeFeed,
-    updateFeedMapping,
-    updateFeedGroup,
+  
+  async clearCache() {
+    return this.post('/api/cache/clear');
+  }
+  
+  // Public endpoints (no auth required)
+  async getPublicFeeds() {
+    const url = `${this.baseUrl}/api/public/feeds`;
+    const response = await fetch(url);
     
-    // Channel management  
-    getChannels,
-    addChannel,
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
     
-    // Prompts
-    getSystemPrompt,
-    updateSystemPrompt,
-    testPrompt,
-    
-    // Status & Stats
-    getSystemStatus,
-    getSystemStats,
-    runBotJob,
-    clearCache
-  };
-})();
+    return response.json();
+  }
+}
+
+// Create global instance
+window.HanuAPI = new HanuAPI();
+
+// Export for modules
+export default window.HanuAPI;

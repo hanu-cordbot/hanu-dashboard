@@ -4,624 +4,472 @@
   <meta charset="utf-8">
   <title>HANU Prompt Editor</title>
   <link href="shared/common.css" rel="stylesheet">
-  <!-- Discord-style emoji rendering -->
   <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <style>
-    /* Discord-style emoji rendering */
-    img.emoji {
-      height: 1em;
-      width: 1em;
-      margin: 0 0.05em 0 0.1em;
-      vertical-align: -0.1em;
-    }
-    
-    /* Discord Theme */
-    body { 
-      font-family: "Whitney", "Helvetica Neue", Helvetica, Arial, sans-serif;
-      background: #36393f;
-      color: #dcddde;
-      margin: 0;
-      padding: 0;
-    }
-    
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    
-    /* Navigation */
-    .nav-bar {
-      background: #2f3136;
-      padding: 15px 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .nav-links a {
-      color: #00d4aa;
-      text-decoration: none;
-      margin: 0 15px;
-      font-weight: 500;
-    }
-    .nav-links a:hover {
-      color: #00f5cc;
-    }
-    
-    /* Header */
-    .prompt-header {
-      background: linear-gradient(135deg, #5865f2 0%, #3ba55d 100%);
-      color: white;
-      padding: 30px;
-      border-radius: 12px;
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .prompt-header h1 {
-      margin: 0;
-      font-size: 2.5rem;
-      font-weight: 700;
-    }
-    
-    /* Section */
-    .section {
-      background: #2f3136;
-      border: 2px solid #40444b;
-      padding: 25px;
-      margin: 20px 0;
-      border-radius: 8px;
-      transition: border-color 0.2s;
-    }
-    .section:hover {
-      border-color: #5865f2;
-    }
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 2px solid #40444b;
-    }
-    .section input[name="section_name"] {
-      font-weight: 600;
-      font-size: 18px;
-      border: none;
-      background: #40444b;
-      color: #dcddde;
-      padding: 10px 15px;
-      border-radius: 6px;
-      width: 300px;
-    }
-    .section textarea {
-      width: 100%;
-      min-height: 200px;
-      font-family: 'Consolas', 'Monaco', monospace;
-      font-size: 14px;
-      background: #40444b;
-      color: #dcddde;
-      border: 1px solid #40444b;
-      border-radius: 6px;
-      padding: 15px;
-      resize: vertical;
-      line-height: 1.4;
-    }
-    .section textarea:focus {
-      outline: none;
-      border-color: #5865f2;
-    }
-    .preview {
-      margin-top: 20px;
-      padding: 20px;
-      background: #36393f;
-      border: 1px solid #40444b;
-      border-radius: 6px;
-      border-left: 4px solid #00d4aa;
-    }
-    .preview h1, .preview h2, .preview h3 {
-      color: #dcddde;
-      margin-top: 0;
-    }
-    .preview p {
-      color: #b9bbbe;
-      line-height: 1.6;
-    }
-    .preview code {
-      background: #2f3136;
-      color: #00d4aa;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: 'Consolas', 'Monaco', monospace;
-    }
-    
-    /* Buttons */
-    .btn {
-      padding: 12px 20px;
-      border: none;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s;
-      font-size: 14px;
-    }
-    .btn-primary {
-      background: #5865f2;
-      color: white;
-    }
-    .btn-primary:hover {
-      background: #4752c4;
-      transform: translateY(-1px);
-    }
-    .btn-success {
-      background: #3ba55d;
-      color: white;
-    }
-    .btn-success:hover {
-      background: #2d7d42;
-      transform: translateY(-1px);
-    }
-    .btn-danger {
-      background: #ed4245;
-      color: white;
-    }
-    .btn-danger:hover {
-      background: #c23b3d;
-      transform: translateY(-1px);
-    }
-    .btn-secondary {
-      background: #4f545c;
-      color: #dcddde;
-    }
-    .btn-secondary:hover {
-      background: #5d6269;
-      transform: translateY(-1px);
-    }
-    
-    /* Action Bar */
-    .action-bar {
-      background: #2f3136;
-      padding: 20px;
-      border-radius: 8px;
-      margin: 30px 0;
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
-    
-    /* Test Area */
-    .test-area {
-      background: #2f3136;
-      padding: 25px;
-      border-radius: 8px;
-      margin: 30px 0;
-      border-left: 4px solid #5865f2;
-    }
-    .test-area h3 {
-      color: #dcddde;
-      margin: 0 0 15px 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .test-content {
-      width: 100%;
-      min-height: 120px;
-      background: #40444b;
-      color: #dcddde;
-      border: 1px solid #40444b;
-      border-radius: 6px;
-      padding: 15px;
-      font-family: 'Consolas', 'Monaco', monospace;
-      font-size: 13px;
-      resize: vertical;
-    }
-    .test-content:focus {
-      outline: none;
-      border-color: #5865f2;
-    }
-    .test-controls {
-      margin: 15px 0;
-      display: flex;
-      gap: 10px;
-    }
-    .test-result {
-      background: #36393f;
-      padding: 20px;
-      margin: 15px 0;
-      border: 1px solid #40444b;
-      border-radius: 6px;
-      border-left: 4px solid #00d4aa;
-    }
-    .test-result h4 {
-      color: #dcddde;
-      margin: 0 0 10px 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .test-result-content {
-      background: #2f3136;
-      padding: 15px;
-      border-radius: 4px;
-      margin: 10px 0;
-      font-family: 'Consolas', 'Monaco', monospace;
-      color: #b9bbbe;
-      white-space: pre-wrap;
-      line-height: 1.4;
-    }
-    
-    /* Status Messages */
-    .save-status {
-      margin: 20px 0;
-    }
-    .status-success {
-      background: #2d4a3a;
-      color: #3ba55d;
-      padding: 15px;
-      border-radius: 6px;
-      border-left: 4px solid #3ba55d;
-    }
-    .status-error {
-      background: #4a2d2d;
-      color: #ed4245;
-      padding: 15px;
-      border-radius: 6px;
-      border-left: 4px solid #ed4245;
-    }
-    .status-loading {
-      background: #3d3d4a;
-      color: #5865f2;
-      padding: 15px;
-      border-radius: 6px;
-      border-left: 4px solid #5865f2;
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-      .container { padding: 15px; }
-      .section-header { flex-direction: column; gap: 15px; }
-      .action-bar { flex-direction: column; }
-      .test-controls { flex-direction: column; }
-    }
-    
-    /* Utility */
-    .hidden { display: none !important; }
-  </style>
 </head>
 <body>
   <div class="container">
     <!-- Navigation -->
-    <div class="nav-bar">
-      <div class="nav-links">
-        <a href="index.html">🏠 Home</a>
-        <a href="dashboard.html">🤖 Dashboard</a>
-        <a href="stats.html">📊 Statistics</a>
-      </div>
-      <div style="color: #72767d; font-size: 14px;">
-        Prompt Configuration
-      </div>
+    <div class="nav">
+      <a href="index.html">🏠 Home</a>
+      <a href="dashboard.html">🤖 Dashboard</a>
+      <a href="prompt-editor.html" class="active">✏️ Prompt Editor</a>
+      <a href="stats.html">📊 Statistics</a>
     </div>
 
     <!-- Header -->
-    <div class="prompt-header">
+    <div class="header">
       <h1>✏️ System Prompt Editor</h1>
       <p>Configure AI system prompts that control how the bot processes RSS feeds</p>
     </div>
 
-    <!-- Main Editor -->
-    <div id="main-editor" class="hidden">
-      <div id="sections-container">
-        <!-- Dynamic sections will be inserted here -->
+    <!-- Authentication -->
+    <div class="auth-section" id="auth-section">
+      <h3>🔐 Authentication Required</h3>
+      <input type="password" id="auth-token" placeholder="Enter AUTH_TOKEN">
+      <button id="login-button">Login</button>
+      <div id="auth-status" style="margin-top: 10px;"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="hidden">
+      <!-- Current Prompt Status -->
+      <div class="status-grid">
+        <div class="status-card">
+          <strong>📝 Prompt Sections</strong>
+          <div class="status-value" id="sections-count">0</div>
+        </div>
+        <div class="status-card">
+          <strong>📊 Total Length</strong>
+          <div class="status-value" id="total-length">0</div>
+        </div>
+        <div class="status-card">
+          <strong>💾 Last Saved</strong>
+          <div class="status-value" id="last-saved">Never</div>
+        </div>
       </div>
 
-      <!-- Action Bar -->
-      <div class="action-bar">
-        <button onclick="addSection()" class="btn btn-success">➕ Add Section</button>
-        <button onclick="savePrompt()" class="btn btn-primary">💾 Save Prompt</button>
-        <button onclick="loadPrompt()" class="btn btn-secondary">🔄 Reload</button>
-        <button onclick="exportPrompt()" class="btn btn-secondary">📤 Export</button>
+      <!-- Prompt Sections -->
+      <div class="section">
+        <div class="flex-between mb-20">
+          <h2>📋 Prompt Sections</h2>
+          <div>
+            <button onclick="addSection()" class="btn btn-primary">➕ Add Section</button>
+            <button onclick="savePrompt()" class="btn btn-success" id="save-btn">💾 Save Prompt</button>
+          </div>
+        </div>
+
+        <div id="sections-container">
+          <div class="loading">Loading prompt sections...</div>
+        </div>
       </div>
 
       <!-- Prompt Testing -->
-      <div class="test-area">
-        <h3>🧪 Test Prompt with AI</h3>
-        <p style="color: #b9bbbe; margin-bottom: 15px;">Test your prompt configuration with sample RSS feed content to see how the AI will respond.</p>
+      <div class="section">
+        <h2>🧪 Test Prompt</h2>
+        <p>Test your prompt with sample RSS feed content to see how the AI responds</p>
         
-        <label style="display: block; color: #dcddde; font-weight: 600; margin-bottom: 8px;">Sample Feed Content:</label>
-        <textarea id="test-content" class="test-content" placeholder="Paste RSS feed content here for testing...">
+        <div class="form-group mb-15">
+          <textarea id="test-content" rows="6" placeholder="Paste sample RSS feed content here for testing...">
 Tiêu đề: CLB Thanh niên vận động hiến máu thông báo
 Nội dung: Thông báo đến các bạn sinh viên về chương trình hiến máu nhân đạo sẽ được tổ chức vào ngày 25/7/2025 tại hội trường A1. Mời các bạn tham gia ủng hộ hoạt động ý nghĩa này.
+Link: https://www.facebook.com/doimauhanu/posts/1298142858987694
 Ngày đăng: 2025-07-21T08:00:00
-        </textarea>
+          </textarea>
+        </div>
 
-        <div class="test-controls">
-          <button onclick="testPrompt()" class="btn btn-primary">🚀 Test with AI</button>
+        <div class="flex gap-15 mb-15">
+          <button onclick="testPrompt()" class="btn btn-primary" id="test-btn">🚀 Test with AI</button>
           <button onclick="clearTest()" class="btn btn-secondary">🗑️ Clear</button>
+          <button onclick="loadSampleContent()" class="btn btn-outline">📄 Load Sample</button>
         </div>
 
         <div id="test-results"></div>
       </div>
 
-      <!-- Save Status -->
-      <div id="save-status" class="save-status"></div>
+      <!-- Prompt Templates -->
+      <div class="section">
+        <h2>📚 Prompt Templates</h2>
+        <p>Quick-start templates for different use cases</p>
+        
+        <div class="flex gap-15">
+          <button onclick="loadTemplate('vietnamese')" class="btn btn-outline">🇻🇳 Vietnamese University</button>
+          <button onclick="loadTemplate('general')" class="btn btn-outline">🌐 General RSS Bot</button>
+          <button onclick="loadTemplate('minimal')" class="btn btn-outline">⚡ Minimal</button>
+          <button onclick="loadTemplate('detailed')" class="btn btn-outline">📖 Detailed</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- Scripts -->
-  <script src="shared/auth.js"></script>
-  <script src="shared/api.js"></script>
-  <script>
-    let sections = [];
+  <script type="module">
+    import HanuAuth from './shared/auth.js';
+    import HanuAPI from './shared/api.js';
 
-    // Initialize when authenticated
-    window.addEventListener('hanu-authenticated', async () => {
-      document.getElementById('main-editor').classList.remove('hidden');
-      await loadPrompt();
-      parseEmojis();
+    let sections = [];
+    let lastSavedTime = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      HanuAuth.setupAuthUI();
+      
+      HanuAuth.onLogin(async () => {
+        await loadPrompt();
+      });
+      
+      twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
+      
+      if (HanuAuth.isAuthenticated()) {
+        const isValid = await HanuAuth.testAuth();
+        if (isValid) {
+          document.getElementById('auth-section').classList.add('hidden');
+          document.getElementById('main-content').classList.remove('hidden');
+          await loadPrompt();
+        }
+      }
     });
 
-    // Load current system prompt
+    // Load current prompt
     async function loadPrompt() {
       try {
-        const data = await window.HanuAPI.getSystemPrompt();
-        sections = data.sections || [
-          {
-            name: "System Role",
-            content: "Bạn là trợ lý tin tức của trường Đại học Hà Nội. Nhiệm vụ của bạn là xử lý nội dung RSS feed và tạo tóm tắt hấp dẫn cho các bài đăng Discord."
-          },
-          {
-            name: "Output Format",
-            content: "Định dạng phản hồi của bạn như sau:\n\n**Tóm tắt**: Tóm tắt ngắn gọn bằng tiếng Việt\n**Chi tiết**: Thông tin chi tiết\n**Liên quan**: Thông tin liên quan đến sinh viên"
-          }
-        ];
-
+        const data = await HanuAPI.getSystemPrompt();
+        sections = data.sections || getDefaultSections();
         renderSections();
-        updateAllPreviews();
-        parseEmojis();
+        updateStats();
       } catch (error) {
         console.error('Failed to load prompt:', error);
-        showError('Failed to load prompt: ' + error.message);
-        // Initialize with default sections if load fails
-        sections = [{
-          name: "Default Section",
-          content: "Enter your prompt content here..."
-        }];
+        sections = getDefaultSections();
         renderSections();
+        updateStats();
+        showAlert('Failed to load prompt: ' + error.message, 'warning');
       }
     }
 
-    // Render all sections
+    // Get default sections
+    function getDefaultSections() {
+      return [
+        {
+          name: "System Role",
+          content: "Bạn là trợ lý tin tức của trường Đại học Hà Nội. Nhiệm vụ của bạn là xử lý nội dung RSS feed và tạo tóm tắt hấp dẫn cho các bài đăng Discord."
+        },
+        {
+          name: "Output Format", 
+          content: "Định dạng phản hồi của bạn như sau:\n\n**📝 Tóm tắt**: Tóm tắt ngắn gọn bằng tiếng Việt (1-2 câu)\n**📋 Chi tiết**: Thông tin chi tiết và quan trọng\n**👥 Liên quan**: Thông tin liên quan đến sinh viên HANU\n**🔗 Nguồn**: Link bài viết gốc"
+        },
+        {
+          name: "Content Guidelines",
+          content: "- Sử dụng tiếng Việt tự nhiên và dễ hiểu\n- Tập trung vào thông tin hữu ích cho sinh viên\n- Làm nổi bật các thông tin quan trọng như thời gian, địa điểm\n- Giữ tone tích cực và chuyên nghiệp\n- Tránh thông tin không chính xác hoặc cảm tính"
+        }
+      ];
+    }
+
+    // Render sections
     function renderSections() {
       const container = document.getElementById('sections-container');
       
-      container.innerHTML = sections.map((section, index) => `
-        <div class="section" data-index="${index}">
-          <div class="section-header">
-            <input type="text" name="section_name" value="${section.name}" 
-                   onchange="updateSectionName(${index}, this.value)" 
-                   placeholder="Section Name">
-            <button onclick="removeSection(${index})" class="btn btn-danger">🗑️ Remove</button>
-          </div>
-          
-          <div style="margin-bottom: 15px;">
-            <label style="display: block; color: #dcddde; font-weight: 600; margin-bottom: 8px;">
-              Content (supports Markdown):
-            </label>
-            <textarea name="section_content" 
-                      onchange="updateSectionContent(${index}, this.value)" 
-                      oninput="updatePreview(${index})" 
-                      rows="8">${section.content}</textarea>
-          </div>
-          
-          <div class="preview" id="preview-${index}">
-            <!-- Preview will be inserted here -->
-          </div>
-        </div>
-      `).join('');
+      if (sections.length === 0) {
+        container.innerHTML = '<div class="loading">No sections configured</div>';
+        return;
+      }
 
-      // Update all previews after rendering
-      setTimeout(updateAllPreviews, 100);
+      let html = '';
+      sections.forEach((section, index) => {
+        html += `
+          <div class="prompt-section" data-index="${index}">
+            <div class="prompt-header">
+              <input 
+                type="text" 
+                value="${section.name}" 
+                onchange="updateSectionName(${index}, this.value)"
+                placeholder="Section name"
+                class="w-full"
+                style="font-weight: 600; font-size: 16px; border: none; background: transparent;"
+              >
+              <div>
+                <button onclick="moveSection(${index}, -1)" class="btn btn-outline" ${index === 0 ? 'disabled' : ''}>⬆️</button>
+                <button onclick="moveSection(${index}, 1)" class="btn btn-outline" ${index === sections.length - 1 ? 'disabled' : ''}>⬇️</button>
+                <button onclick="removeSection(${index})" class="btn btn-danger">🗑️</button>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <textarea 
+                rows="6" 
+                placeholder="Enter section content (supports Markdown)"
+                onchange="updateSectionContent(${index}, this.value)"
+                oninput="updatePreview(${index}); updateStats()"
+              >${section.content}</textarea>
+            </div>
+            
+            <div class="prompt-preview" id="preview-${index}">
+              ${marked.parse(section.content || '')}
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+      
+      // Update all previews
+      sections.forEach((_, index) => updatePreview(index));
+      twemoji.parse(container, { folder: 'svg', ext: '.svg' });
     }
 
     // Update section name
-    function updateSectionName(index, name) {
+    window.updateSectionName = function(index, name) {
       if (sections[index]) {
         sections[index].name = name;
+        updateStats();
       }
-    }
+    };
 
     // Update section content
-    function updateSectionContent(index, content) {
+    window.updateSectionContent = function(index, content) {
       if (sections[index]) {
         sections[index].content = content;
+        updateStats();
       }
-    }
+    };
 
-    // Update individual preview
-    function updatePreview(index) {
+    // Update preview
+    window.updatePreview = function(index) {
       const preview = document.getElementById(`preview-${index}`);
-      const textarea = document.querySelector(`[data-index="${index}"] textarea`);
+      const section = sections[index];
       
-      if (preview && textarea) {
+      if (preview && section) {
         try {
-          if (typeof marked !== 'undefined') {
-            preview.innerHTML = marked.parse(textarea.value);
-          } else {
-            preview.innerHTML = '<em>Markdown preview unavailable</em>';
-          }
+          preview.innerHTML = marked.parse(section.content || '');
+          twemoji.parse(preview, { folder: 'svg', ext: '.svg' });
         } catch (error) {
           preview.innerHTML = '<em>Markdown preview error</em>';
         }
       }
-    }
+    };
 
-    // Update all previews
-    function updateAllPreviews() {
-      sections.forEach((_, index) => updatePreview(index));
-    }
-
-    // Add new section
-    function addSection() {
+    // Add section
+    window.addSection = function() {
       sections.push({
-        name: "New Section",
-        content: "Enter content here..."
+        name: `Section ${sections.length + 1}`,
+        content: "Enter your prompt content here..."
       });
       renderSections();
-      parseEmojis();
-    }
+      updateStats();
+    };
 
     // Remove section
-    function removeSection(index) {
+    window.removeSection = function(index) {
       if (sections.length > 1 && confirm('Remove this section?')) {
         sections.splice(index, 1);
         renderSections();
-        parseEmojis();
+        updateStats();
       } else if (sections.length === 1) {
-        showError('Cannot remove the last section');
+        showAlert('Cannot remove the last section', 'warning');
       }
-    }
+    };
+
+    // Move section
+    window.moveSection = function(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex >= 0 && newIndex < sections.length) {
+        [sections[index], sections[newIndex]] = [sections[newIndex], sections[index]];
+        renderSections();
+        updateStats();
+      }
+    };
 
     // Save prompt
-    async function savePrompt() {
-      const statusDiv = document.getElementById('save-status');
-      statusDiv.innerHTML = '<div class="status-loading">💾 Saving prompt configuration...</div>';
-
-      try {
-        await window.HanuAPI.updateSystemPrompt(sections);
-        statusDiv.innerHTML = '<div class="status-success">✅ System prompt saved successfully!</div>';
-        
-        // Clear status after 3 seconds
-        setTimeout(() => {
-          statusDiv.innerHTML = '';
-        }, 3000);
-        
-        parseEmojis();
-
-      } catch (error) {
-        statusDiv.innerHTML = `<div class="status-error">❌ Save failed: ${error.message}</div>`;
-        parseEmojis();
-      }
-    }
-
-    // Export prompt configuration
-    function exportPrompt() {
-      const config = {
-        sections: sections,
-        timestamp: new Date().toISOString(),
-        version: "1.0"
-      };
+    window.savePrompt = async function() {
+      const saveBtn = document.getElementById('save-btn');
       
-      const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `hanu-prompts-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      showSuccess('Prompt configuration exported successfully');
-    }
-
-    // Test prompt with sample content
-    async function testPrompt() {
-      const testContent = document.getElementById('test-content').value.trim();
-      const resultsDiv = document.getElementById('test-results');
-
-      if (!testContent) {
-        showError('Please enter some test content first');
+      if (sections.length === 0) {
+        showAlert('Cannot save empty prompt', 'warning');
         return;
       }
 
-      resultsDiv.innerHTML = '<div class="test-result"><h4>⏳ Testing prompt with AI...</h4></div>';
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="loading-spinner"></span> Saving...';
 
       try {
-        const response = await window.HanuAPI.testPrompt(testContent);
+        await HanuAPI.updateSystemPrompt(sections);
+        lastSavedTime = new Date();
+        updateStats();
+        showAlert('System prompt saved successfully! 🎉', 'success');
+      } catch (error) {
+        showAlert('Failed to save prompt: ' + error.message, 'danger');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '💾 Save Prompt';
+      }
+    };
+
+    // Test prompt
+    window.testPrompt = async function() {
+      const testBtn = document.getElementById('test-btn');
+      const content = document.getElementById('test-content').value.trim();
+      const resultsDiv = document.getElementById('test-results');
+
+      if (!content) {
+        showAlert('Please enter test content', 'warning');
+        return;
+      }
+
+      testBtn.disabled = true;
+      testBtn.innerHTML = '<span class="loading-spinner"></span> Testing...';
+      
+      resultsDiv.innerHTML = `
+        <div class="test-result">
+          <h3>🧪 Testing Prompt...</h3>
+          <p>Sending test content to AI with current prompt configuration...</p>
+        </div>
+      `;
+
+      try {
+        const response = await HanuAPI.testPrompt(content);
         
         resultsDiv.innerHTML = `
           <div class="test-result">
-            <h4>🤖 AI Response:</h4>
-            <div class="test-result-content">${response.result || 'No response received'}</div>
-            <small style="color: #72767d;">Generated: ${new Date().toLocaleString()}</small>
+            <h3>🤖 AI Response</h3>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 10px 0; white-space: pre-wrap;">${response.result || 'No response received'}</div>
+            <small style="color: #666;">Generated: ${new Date().toLocaleString()} | Test completed successfully</small>
           </div>
         `;
         
-        parseEmojis();
+        twemoji.parse(resultsDiv, { folder: 'svg', ext: '.svg' });
 
       } catch (error) {
         resultsDiv.innerHTML = `
-          <div class="test-result" style="border-left-color: #ed4245;">
-            <h4>❌ Test Failed:</h4>
-            <div class="test-result-content">${error.message}</div>
+          <div class="test-result">
+            <h3>❌ Test Failed</h3>
+            <p style="color: #dc3545;">${error.message}</p>
+            <small style="color: #666;">Make sure your prompt is saved and the AI service is available</small>
           </div>
         `;
-        parseEmojis();
+      } finally {
+        testBtn.disabled = false;
+        testBtn.innerHTML = '🚀 Test with AI';
       }
-    }
+    };
 
-    // Clear test results
-    function clearTest() {
+    // Clear test
+    window.clearTest = function() {
       document.getElementById('test-content').value = '';
       document.getElementById('test-results').innerHTML = '';
+    };
+
+    // Load sample content
+    window.loadSampleContent = function() {
+      const samples = [
+        {
+          title: "Sample University Event",
+          content: `Tiêu đề: Hội thảo Khoa học Sinh viên năm 2025
+Nội dung: Khoa Công nghệ Thông tin - Trường Đại học Hà Nội tổ chức Hội thảo Khoa học Sinh viên với chủ đề "AI và Tương lai". Thời gian: 9:00 ngày 30/7/2025 tại Hội trường B1. Sinh viên quan tâm đăng ký tại văn phòng khoa.
+Link: https://www.facebook.com/khoacntt.hanu/posts/847604707367028
+Ngày đăng: 2025-07-21T10:30:00`
+        },
+        {
+          title: "Sample Club Activity",
+          content: `Tiêu đề: CLB Guitar HANU - Buổi biểu diễn cuối kỳ
+Nội dung: CLB Guitar HANU xin thông báo buổi biểu diễn âm nhạc cuối kỳ sẽ diễn ra vào 19:00 thứ 6 ngày 26/7/2025 tại sân khấu ngoài trời. Chương trình có sự tham gia của các thành viên CLB với nhiều tiết mục hấp dẫn. Sinh viên toàn trường được mời tham dự miễn phí.
+Link: https://www.facebook.com/Hanuguitar/posts/1140180748143664
+Ngày đăng: 2025-07-21T14:15:00`
+        }
+      ];
+      
+      const randomSample = samples[Math.floor(Math.random() * samples.length)];
+      document.getElementById('test-content').value = randomSample.content;
+    };
+
+    // Load templates
+    window.loadTemplate = function(templateType) {
+      if (!confirm('This will replace your current prompt. Continue?')) return;
+
+      const templates = {
+        vietnamese: [
+          {
+            name: "System Role - Vietnamese University",
+            content: "Bạn là trợ lý thông minh chuyên xử lý tin tức của trường Đại học Hà Nội. Bạn có khả năng đọc hiểu và tóm tắt nội dung RSS feed từ các trang Facebook của trường và các câu lạc bộ sinh viên."
+          },
+          {
+            name: "Output Format - Discord Optimized",
+            content: "Định dạng phản hồi cho Discord:\n\n**📢 THÔNG BÁO**\n**📝 Tóm tắt**: [Tóm tắt ngắn gọn 1-2 câu]\n**📋 Chi tiết**: [Thông tin chi tiết quan trọng]\n**📅 Thời gian**: [Nếu có thông tin về thời gian]\n**📍 Địa điểm**: [Nếu có thông tin về địa điểm]\n**👥 Đối tượng**: [Ai nên quan tâm]\n**🔗 Chi tiết**: [Link gốc]"
+          }
+        ],
+        general: [
+          {
+            name: "System Role - General RSS Bot",
+            content: "You are an intelligent RSS feed processor. Your task is to analyze RSS content and create engaging summaries for social media posting."
+          },
+          {
+            name: "Output Guidelines",
+            content: "Format your response as:\n\n**Summary**: Brief overview in 1-2 sentences\n**Details**: Important information and context\n**Action**: What users should do (if applicable)\n**Source**: Original link"
+          }
+        ],
+        minimal: [
+          {
+            name: "Simple Processing",
+            content: "Create a brief, engaging summary of the RSS content. Keep it concise and highlight the most important information. Use appropriate emojis and format for social media."
+          }
+        ],
+        detailed: [
+          {
+            name: "Comprehensive Analysis",
+            content: "You are an advanced content processor with expertise in:\n1. Content analysis and summarization\n2. Audience targeting\n3. Social media optimization\n4. Information prioritization\n\nProvide detailed analysis of RSS content including context, relevance, and actionable insights."
+          },
+          {
+            name: "Output Structure",
+            content: "Provide output in the following structure:\n\n**Executive Summary**: Key points in bullet format\n**Detailed Analysis**: Comprehensive breakdown\n**Target Audience**: Who should care about this\n**Recommended Actions**: What users should do\n**Context**: Background information\n**Source Attribution**: Proper crediting"
+          }
+        ]
+      };
+
+      if (templates[templateType]) {
+        sections = templates[templateType];
+        renderSections();
+        updateStats();
+        showAlert(`${templateType.charAt(0).toUpperCase() + templateType.slice(1)} template loaded! 📚`, 'success');
+      }
+    };
+
+    // Update statistics
+    function updateStats() {
+      document.getElementById('sections-count').textContent = sections.length;
+      
+      const totalLength = sections.reduce((sum, section) => sum + (section.content || '').length, 0);
+      document.getElementById('total-length').textContent = totalLength.toLocaleString();
+      
+      document.getElementById('last-saved').textContent = lastSavedTime ? 
+        formatDate(lastSavedTime) : 'Never';
     }
 
-    // Utility functions
-    function showSuccess(message) {
-      const notification = document.createElement('div');
-      notification.style.cssText = `
-        position: fixed; top: 20px; right: 20px; z-index: 9999;
-        background: #3ba55d; color: white; padding: 12px 20px;
-        border-radius: 6px; font-weight: 600; font-size: 14px;
-      `;
-      notification.textContent = message;
-      document.body.appendChild(notification);
+    // Format date helper
+    function formatDate(date) {
+      const now = new Date();
+      const diffMinutes = Math.floor((now - date) / (1000 * 60));
       
-      setTimeout(() => {
-        notification.remove();
-      }, 3000);
+      if (diffMinutes < 1) return 'Just now';
+      if (diffMinutes < 60) return `${diffMinutes}m ago`;
+      if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`;
+      return date.toLocaleDateString();
     }
 
-    function showError(message) {
-      const notification = document.createElement('div');
-      notification.style.cssText = `
-        position: fixed; top: 20px; right: 20px; z-index: 9999;
-        background: #ed4245; color: white; padding: 12px 20px;
-        border-radius: 6px; font-weight: 600; font-size: 14px;
-      `;
-      notification.textContent = message;
-      document.body.appendChild(notification);
+    // Alert helper
+    function showAlert(message, type = 'info') {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type} fade-in`;
+      alertDiv.style.position = 'fixed';
+      alertDiv.style.top = '20px';
+      alertDiv.style.right = '20px';
+      alertDiv.style.zIndex = '10000';
+      alertDiv.style.minWidth = '300px';
+      alertDiv.textContent = message;
+      
+      document.body.appendChild(alertDiv);
       
       setTimeout(() => {
-        notification.remove();
+        alertDiv.remove();
       }, 5000);
     }
-
-    // Discord-style emoji rendering
-    function parseEmojis() {
-      if (typeof twemoji !== 'undefined') {
-        twemoji.parse(document.body, {
-          folder: 'svg',
-          ext: '.svg'
-        });
-      }
-    }
-
-    // Initialize emoji parsing when DOM loads
-    document.addEventListener('DOMContentLoaded', parseEmojis);
-
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log('Prompt Editor loaded');
-    });
   </script>
 </body>
 </html>
