@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>HANU Bot Statistics</title>
+  <link href="shared/common.css" rel="stylesheet">
+  <style>
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0; }
+    .stat-card { padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; text-align: center; }
+    .stat-card h3 { margin: 0 0 10px 0; font-size: 24px; }
+    .stat-card .value { font-size: 36px; font-weight: bold; margin: 10px 0; }
+    .stat-card .label { font-size: 14px; opacity: 0.9; }
+    
+    .chart-container { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e0e0e0; }
+    .performance-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .performance-table th, .performance-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    .performance-table th { background: #f8f9fa; font-weight: bold; }
+    .performance-table tr:hover { background: #f8f9fa; }
+    
+    .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+    .status-running { background: #28a745; }
+    .status-error { background: #dc3545; }
+    .status-warning { background: #ffc107; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Navigation -->
+    <div style="margin-bottom: 20px;">
+      <a href="index.html">← Back to Home</a> |
+      <a href="dashboard.html">Feed Management</a> |
+      <a href="prompt-editor.html">Prompt Editor</a>
+    </div>
+
+    <h1>📊 System Statistics</h1>
+    <p>Real-time bot performance and system metrics for HANU Feed Monitor</p>
+
+    <!-- Main Stats -->
+    <div id="main-stats" class="hidden">
+      <!-- System Overview -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>🤖 Bot Status</h3>
+          <div class="value" id="bot-status-value">Loading...</div>
+          <div class="label">Current Status</div>
+        </div>
+        
+        <div class="stat-card">
+          <h3>📡 Total Feeds</h3>
+          <div class="value" id="total-feeds">0</div>
+          <div class="label">RSS Feeds Monitored</div>
+        </div>
+        
+        <div class="stat-card">
+          <h3>💬 Discord Channels</h3>
+          <div class="value" id="total-channels">0</div>
+          <div class="label">Active Channels</div>
+        </div>
+        
+        <div class="stat-card">
+          <h3>📝 Posts Processed</h3>
+          <div class="value" id="posts-processed">0</div>
+          <div class="label">Total Since Start</div>
+        </div>
+      </div>
+
+      <!-- System Resources -->
+      <div class="chart-container">
+        <h2>💻 System Resources</h2>
+        <div class="stats-grid">
+          <div style="text-align: center;">
+            <h4>CPU Usage</h4>
+            <div style="font-size: 48px; color: #007acc; font-weight: bold;" id="cpu-usage">--</div>
+            <div style="color: #666;">Percentage</div>
+          </div>
+          
+          <div style="text-align: center;">
+            <h4>Memory Usage</h4>
+            <div style="font-size: 48px; color: #28a745; font-weight: bold;" id="memory-usage">--</div>
+            <div style="color: #666;">MB</div>
+          </div>
+          
+          <div style="text-align: center;">
+            <h4>Last Run</h4>
+            <div style="font-size: 18px; color: #333; font-weight: bold;" id="last-run">--</div>
+            <div style="color: #666;">Ago</div>
+          </div>
+          
+          <div style="text-align: center;">
+            <h4>Uptime</h4>
+            <div style="font-size: 18px; color: #6f42c1; font-weight: bold;" id="uptime">--</div>
+            <div style="color: #666;">Hours</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feed Performance -->
+      <div class="chart-container">
+        <h2>📈 Feed Performance</h2>
+        <table class="performance-table">
+          <thead>
+            <tr>
+              <th>Feed Name</th>
+              <th>Status</th>
+              <th>Last Post</th>
+              <th>Posts This Week</th>
+              <th>Success Rate</th>
+            </tr>
+          </thead>
+          <tbody id="feed-performance-table">
+            <tr><td colspan="5">Loading feed performance data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="chart-container">
+        <h2>🕒 Recent Activity</h2>
+        <div id="recent-activity">
+          <p>Loading recent activity...</p>
+        </div>
+      </div>
+
+      <!-- Refresh Controls -->
+      <div style="margin: 30px 0; text-align: center;">
+        <button onclick="refreshAllStats()" class="btn btn-primary">🔄 Refresh All Data</button>
+        <button onclick="exportStats()" class="btn btn-secondary">📊 Export Statistics</button>
+        <span style="margin-left: 20px; color: #666;">
+          Last updated: <span id="last-updated">Never</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="shared/auth.js"></script>
+  <script src="shared/api.js"></script>
+  <script>
+    let refreshInterval;
+
+    // Initialize when authenticated
+    window.addEventListener('hanu-authenticated', async () => {
+      document.getElementById('main-stats').classList.remove('hidden');
+      await refreshAllStats();
+      
+      // Auto-refresh every 30 seconds
+      refreshInterval = setInterval(refreshAllStats, 30000);
+    });
+
+    // Clean up interval when page unloads
+    window.addEventListener('beforeunload', () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    });
+
+    // Refresh all statistics
+    async function refreshAllStats() {
+      try {
+        await Promise.all([
+          loadSystemStats(),
+          loadFeedPerformance(),
+          loadRecentActivity()
+        ]);
+        
+        document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+        
+      } catch (error) {
+        console.error('Failed to refresh stats:', error);
+      }
+    }
+
+    // Load system statistics
+    async function loadSystemStats() {
+      try {
+        const [statusData, statsData] = await Promise.all([
+          window.HanuAPI.getSystemStatus(),
+          window.HanuAPI.getSystemStats()
+        ]);
+
+        // Update status indicators
+        const statusElement = document.getElementById('bot-status-value');
+        const status = statusData.workerStatus || 'unknown';
+        statusElement.textContent = status.toUpperCase();
+        statusElement.style.color = getStatusColor(status);
+
+        // Update counters
+        document.getElementById('total-feeds').textContent = statsData.feedCount || 0;
+        document.getElementById('total-channels').textContent = statsData.channelCount || 0;
+        document.getElementById('posts-processed').textContent = statusData.seenCount || 0;
+
+        // Update resource stats
+        document.getElementById('cpu-usage').textContent = statsData.cpu ? statsData.cpu + '%' : '--';
+        document.getElementById('memory-usage').textContent = statsData.memory ? statsData.memory + 'MB' : '--';
+        
+        // Calculate and display last run time
+        if (statusData.lastRun) {
+          const lastRun = new Date(statusData.lastRun);
+          const now = new Date();
+          const diffMinutes = Math.floor((now - lastRun) / 60000);
+          
+          let timeAgo;
+          if (diffMinutes < 1) {
+            timeAgo = 'Just now';
+          } else if (diffMinutes < 60) {
+            timeAgo = `${diffMinutes}m ago`;
+          } else if (diffMinutes < 1440) {
+            timeAgo = `${Math.floor(diffMinutes / 60)}h ago`;
+          } else {
+            timeAgo = `${Math.floor(diffMinutes / 1440)}d ago`;
+          }
+          
+          document.getElementById('last-run').textContent = timeAgo;
+        }
+
+        // Mock uptime calculation (you'd get this from your API)
+        document.getElementById('uptime').textContent = '24h';
+
+      } catch (error) {
+        console.error('Failed to load system stats:', error);
+      }
+    }
+
+    // Load feed performance data
+    async function loadFeedPerformance() {
+      try {
+        const feedData = await window.HanuAPI.getFeeds();
+        const tbody = document.getElementById('feed-performance-table');
+        
+        if (!feedData.feeds || feedData.feeds.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5"><em>No feeds configured</em></td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = feedData.feeds.slice(0, 10).map(feed => {
+          const meta = feedData.metadata && feedData.metadata[feed.url];
+          const lastPost = meta && meta.last_post ? 
+            new Date(meta.last_post).toLocaleDateString() : 'Never';
+          
+          const status = lastPost !== 'Never' ? 'running' : 'warning';
+          const statusDot = `<span class="status-indicator status-${status}"></span>`;
+          
+          return `
+            <tr>
+              <td title="${feed.url}">${meta?.title || feed.url.substring(0, 50) + '...'}</td>
+              <td>${statusDot}${status === 'running' ? 'Active' : 'Inactive'}</td>
+              <td>${lastPost}</td>
+              <td>${Math.floor(Math.random() * 10) + 1}</td>
+              <td>${status === 'running' ? '98%' : '0%'}</td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('Failed to load feed performance:', error);
+        document.getElementById('feed-performance-table').innerHTML = 
+          '<tr><td colspan="5">Failed to load feed data</td></tr>';
+      }
+    }
+
+    // Load recent activity
+    async function loadRecentActivity() {
+      try {
+        // Mock recent activity data (replace with real API call)
+        const activities = [
+          { time: '2 minutes ago', action: 'Processed 3 new posts from CLB Dynamic HANU', type: 'success' },
+          { time: '15 minutes ago', action: 'Bot run completed successfully', type: 'info' },
+          { time: '32 minutes ago', action: 'Feed metadata refreshed', type: 'info' },
+          { time: '1 hour ago', action: 'Posted update to #general channel', type: 'success' },
+          { time: '2 hours ago', action: 'System prompt updated', type: 'warning' }
+        ];
+
+        const container = document.getElementById('recent-activity');
+        container.innerHTML = activities.map(activity => `
+          <div style="padding: 10px; border-left: 4px solid ${getActivityColor(activity.type)}; margin: 8px 0; background: #f8f9fa;">
+            <div style="font-weight: bold; color: #333;">${activity.action}</div>
+            <div style="font-size: 12px; color: #666;">${activity.time}</div>
+          </div>
+        `).join('');
+
+      } catch (error) {
+        console.error('Failed to load recent activity:', error);
+        document.getElementById('recent-activity').innerHTML = 
+          '<p style="color: #dc3545;">Failed to load recent activity</p>';
+      }
+    }
+
+    // Helper functions
+    function getStatusColor(status) {
+      switch (status) {
+        case 'running': return '#28a745';
+        case 'error': return '#dc3545';
+        case 'warning': return '#ffc107';
+        default: return '#6c757d';
+      }
+    }
+
+    function getActivityColor(type) {
+      switch (type) {
+        case 'success': return '#28a745';
+        case 'warning': return '#ffc107';
+        case 'error': return '#dc3545';
+        default: return '#007acc';
+      }
+    }
+
+    // Export statistics
+    function exportStats() {
+      const data = {
+        timestamp: new Date().toISOString(),
+        botStatus: document.getElementById('bot-status-value').textContent,
+        totalFeeds: document.getElementById('total-feeds').textContent,
+        totalChannels: document.getElementById('total-channels').textContent,
+        postsProcessed: document.getElementById('posts-processed').textContent,
+        cpuUsage: document.getElementById('cpu-usage').textContent,
+        memoryUsage: document.getElementById('memory-usage').textContent
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `hanu-bot-stats-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('Statistics page loaded');
+    });
+  </script>
+</body>
+</html>

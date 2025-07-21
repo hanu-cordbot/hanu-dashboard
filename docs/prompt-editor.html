@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>HANU Prompt Editor</title>
+  <link href="shared/common.css" rel="stylesheet">
+  <style>
+    .section { border: 2px solid #e0e0e0; padding: 20px; margin: 15px 0; border-radius: 8px; background: #fafafa; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .section input[name="section_name"] { font-weight: bold; font-size: 16px; border: 1px solid #ccc; padding: 8px; width: 300px; }
+    .section textarea { width: 100%; min-height: 150px; font-family: 'Courier New', monospace; font-size: 14px; }
+    .preview { margin-top: 15px; padding: 15px; background: white; border: 1px solid #ddd; border-radius: 4px; }
+    .preview h1, .preview h2, .preview h3 { color: #333; }
+    .add-section-btn { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 10px 5px; }
+    .remove-section-btn { background: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; }
+    .test-area { background: #e8f4f8; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .test-result { background: white; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Navigation -->
+    <div style="margin-bottom: 20px;">
+      <a href="index.html">← Back to Home</a> |
+      <a href="dashboard.html">Feed Management</a> |
+      <a href="stats.html">Statistics</a>
+    </div>
+
+    <h1>✏️ System Prompt Editor</h1>
+    <p>Configure AI system prompts that control how the bot processes and formats RSS feeds.</p>
+
+    <!-- Main Editor -->
+    <div id="main-editor" class="hidden">
+      <div id="sections-container">
+        <!-- Dynamic sections will be inserted here -->
+      </div>
+
+      <div style="margin: 20px 0; text-align: center;">
+        <button onclick="addSection()" class="add-section-btn">➕ Add Section</button>
+        <button onclick="savePrompt()" class="btn btn-primary">💾 Save Prompt</button>
+        <button onclick="loadPrompt()" class="btn btn-secondary">🔄 Reload</button>
+      </div>
+
+      <!-- Prompt Testing -->
+      <div class="test-area">
+        <h3>🧪 Test Prompt</h3>
+        <p>Test your prompt with sample RSS feed content:</p>
+        
+        <div class="form-group">
+          <label><strong>Sample Feed Content:</strong></label>
+          <textarea id="test-content" rows="6" placeholder="Paste RSS feed content here for testing..." style="width: 100%;">
+Tiêu đề: CLB Thanh niên vận động hiến máu thông báo
+Nội dung: Thông báo đến các bạn sinh viên về chương trình hiến máu nhân đạo sẽ được tổ chức vào ngày 25/7/2025 tại hội trường A1. Mời các bạn tham gia ủng hộ hoạt động ý nghĩa này.
+Ngày đăng: 2025-07-21T08:00:00
+          </textarea>
+        </div>
+
+        <div style="margin: 10px 0;">
+          <button onclick="testPrompt()" class="btn btn-primary">🚀 Test with AI</button>
+          <button onclick="clearTest()" class="btn btn-secondary">🗑️ Clear</button>
+        </div>
+
+        <div id="test-results"></div>
+      </div>
+
+      <!-- Save Status -->
+      <div id="save-status" style="margin: 20px 0;"></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="shared/auth.js"></script>
+  <script src="shared/api.js"></script>
+  <script>
+    let sections = [];
+
+    // Initialize when authenticated
+    window.addEventListener('hanu-authenticated', async () => {
+      document.getElementById('main-editor').classList.remove('hidden');
+      await loadPrompt();
+    });
+
+    // Load current system prompt
+    async function loadPrompt() {
+      try {
+        const data = await window.HanuAPI.getSystemPrompt();
+        sections = data.sections || [
+          {
+            name: "System Role",
+            content: "You are a Vietnamese university news assistant. Your job is to process RSS feed content and create engaging summaries for Discord posts."
+          },
+          {
+            name: "Output Format",
+            content: "Format your response as:\n\n**Tóm tắt**: Brief summary in Vietnamese\n**Chi tiết**: Detailed information\n**Liên quan**: Relevant information for students"
+          }
+        ];
+
+        renderSections();
+        updateAllPreviews();
+      } catch (error) {
+        console.error('Failed to load prompt:', error);
+        // Initialize with default sections if load fails
+        sections = [{
+          name: "Default Section",
+          content: "Enter your prompt content here..."
+        }];
+        renderSections();
+      }
+    }
+
+    // Render all sections
+    function renderSections() {
+      const container = document.getElementById('sections-container');
+      
+      container.innerHTML = sections.map((section, index) => `
+        <div class="section" data-index="${index}">
+          <div class="section-header">
+            <input type="text" name="section_name" value="${section.name}" 
+                   onchange="updateSectionName(${index}, this.value)" placeholder="Section Name">
+            <button onclick="removeSection(${index})" class="remove-section-btn">🗑️ Remove</button>
+          </div>
+          
+          <div class="form-group">
+            <label><strong>Content (supports Markdown):</strong></label>
+            <textarea name="section_content" onchange="updateSectionContent(${index}, this.value)" 
+                      oninput="updatePreview(${index})" rows="8">${section.content}</textarea>
+          </div>
+          
+          <div class="preview" id="preview-${index}">
+            <!-- Preview will be inserted here -->
+          </div>
+        </div>
+      `).join('');
+
+      // Update all previews after rendering
+      setTimeout(updateAllPreviews, 100);
+    }
+
+    // Update section name
+    function updateSectionName(index, name) {
+      if (sections[index]) {
+        sections[index].name = name;
+      }
+    }
+
+    // Update section content
+    function updateSectionContent(index, content) {
+      if (sections[index]) {
+        sections[index].content = content;
+      }
+    }
+
+    // Update individual preview
+    function updatePreview(index) {
+      const preview = document.getElementById(`preview-${index}`);
+      const textarea = document.querySelector(`[data-index="${index}"] textarea`);
+      
+      if (preview && textarea) {
+        try {
+          preview.innerHTML = marked.parse(textarea.value);
+        } catch (error) {
+          preview.innerHTML = '<em>Markdown preview error</em>';
+        }
+      }
+    }
+
+    // Update all previews
+    function updateAllPreviews() {
+      sections.forEach((_, index) => updatePreview(index));
+    }
+
+    // Add new section
+    function addSection() {
+      sections.push({
+        name: "New Section",
+        content: "Enter content here..."
+      });
+      renderSections();
+    }
+
+    // Remove section
+    function removeSection(index) {
+      if (sections.length > 1 && confirm('Remove this section?')) {
+        sections.splice(index, 1);
+        renderSections();
+      } else if (sections.length === 1) {
+        alert('Cannot remove the last section');
+      }
+    }
+
+    // Save prompt
+    async function savePrompt() {
+      const statusDiv = document.getElementById('save-status');
+      statusDiv.innerHTML = '<div style="padding: 10px; background: #fff3cd; border-radius: 4px;">💾 Saving...</div>';
+
+      try {
+        await window.HanuAPI.updateSystemPrompt(sections);
+        statusDiv.innerHTML = '<div style="padding: 10px; background: #d4edda; border-radius: 4px;">✅ System prompt saved successfully!</div>';
+        
+        // Clear status after 3 seconds
+        setTimeout(() => {
+          statusDiv.innerHTML = '';
+        }, 3000);
+
+      } catch (error) {
+        statusDiv.innerHTML = `<div style="padding: 10px; background: #f8d7da; border-radius: 4px;">❌ Save failed: ${error.message}</div>`;
+      }
+    }
+
+    // Test prompt with sample content
+    async function testPrompt() {
+      const testContent = document.getElementById('test-content').value.trim();
+      const resultsDiv = document.getElementById('test-results');
+
+      if (!testContent) {
+        alert('Please enter some test content first');
+        return;
+      }
+
+      resultsDiv.innerHTML = '<div class="test-result">⏳ Testing prompt with AI...</div>';
+
+      try {
+        const response = await window.HanuAPI.testPrompt(testContent);
+        
+        resultsDiv.innerHTML = `
+          <div class="test-result">
+            <h4>🤖 AI Response:</h4>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 10px 0;">
+              ${response.result || 'No response received'}
+            </div>
+            <small style="color: #666;">Generated: ${new Date().toLocaleString()}</small>
+          </div>
+        `;
+
+      } catch (error) {
+        resultsDiv.innerHTML = `
+          <div class="test-result">
+            <h4>❌ Test Failed:</h4>
+            <p>${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Clear test results
+    function clearTest() {
+      document.getElementById('test-content').value = '';
+      document.getElementById('test-results').innerHTML = '';
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('Prompt Editor loaded');
+    });
+  </script>
+</body>
+</html>
