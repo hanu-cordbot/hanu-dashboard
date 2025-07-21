@@ -4,108 +4,484 @@
   <meta charset="utf-8">
   <title>HANU Feed Dashboard</title>
   <link href="shared/common.css" rel="stylesheet">
-  <style>
-    /* Feed-specific grid layouts */
-    ul.feed-list:not([data-group]) li { 
-      display: grid; 
-      grid-template-columns: 30px 250px 100px 1fr 80px 140px 140px; 
-      align-items: center; margin-bottom: 5px; column-gap: 10px; 
-    }
-    ul.feed-list.grouped li {
-      display: grid;
-      grid-template-columns: 30px 250px 100px 1fr 80px 140px 140px;
-      align-items: center; margin-bottom: 5px; column-gap: 10px;
-    }
-    ul.feed-list li div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .feed-tree ul { list-style: none; padding-left: 20px; margin: 0; }
-    .feed-tree li.collapsed > ul.feed-list.grouped { height: 0; overflow: hidden; }
-  </style>
+  <!-- Discord-style emoji rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    /* Discord-style emoji rendering */
+    img.emoji {
+      height: 1em;
+      width: 1em;
+      margin: 0 0.05em 0 0.1em;
+      vertical-align: -0.1em;
+    }
+    
+    /* Modern Dashboard Styling */
+    body { 
+      font-family: "Whitney", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background: #36393f;
+      color: #dcddde;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    /* Navigation */
+    .nav-bar {
+      background: #2f3136;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-links a {
+      color: #00d4aa;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: 500;
+    }
+    .nav-links a:hover {
+      color: #00f5cc;
+    }
+    
+    /* Header */
+    .dashboard-header {
+      background: linear-gradient(135deg, #5865f2 0%, #3ba55d 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .dashboard-header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+    
+    /* Status Cards */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .status-card {
+      background: #2f3136;
+      padding: 25px;
+      border-radius: 8px;
+      border-left: 4px solid #5865f2;
+      text-align: center;
+    }
+    .status-card h3 {
+      margin: 0 0 10px 0;
+      color: #b9bbbe;
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #00d4aa;
+    }
+    
+    /* Action Bar */
+    .action-bar {
+      background: #2f3136;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .action-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .action-group input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      background: #40444b;
+      color: #dcddde;
+      font-size: 14px;
+    }
+    .action-group input::placeholder {
+      color: #72767d;
+    }
+    
+    /* Buttons */
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #5865f2;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #4752c4;
+    }
+    .btn-success {
+      background: #3ba55d;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #2d7d42;
+    }
+    .btn-danger {
+      background: #ed4245;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #c23b3d;
+    }
+    .btn-secondary {
+      background: #4f545c;
+      color: #dcddde;
+    }
+    .btn-secondary:hover {
+      background: #5d6269;
+    }
+    
+    /* Feed List */
+    .feeds-section {
+      background: #2f3136;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    .feeds-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #40444b;
+    }
+    .feeds-header h2 {
+      margin: 0;
+      color: #dcddde;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .view-controls {
+      display: flex;
+      gap: 10px;
+    }
+    .view-btn {
+      padding: 8px 16px;
+      background: #40444b;
+      color: #b9bbbe;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .view-btn.active {
+      background: #5865f2;
+      color: white;
+    }
+    
+    /* Feed Items */
+    .feed-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .feed-item {
+      background: #36393f;
+      border: 1px solid #40444b;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: 40px 1fr 120px 100px 80px 150px;
+      gap: 15px;
+      align-items: center;
+      transition: all 0.2s;
+    }
+    .feed-item:hover {
+      border-color: #5865f2;
+      background: #32353b;
+    }
+    .feed-checkbox input {
+      width: 18px;
+      height: 18px;
+    }
+    .feed-title {
+      font-weight: 600;
+      color: #dcddde;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .feed-title small {
+      display: block;
+      color: #72767d;
+      font-weight: 400;
+      font-size: 12px;
+    }
+    .feed-date {
+      color: #b9bbbe;
+      font-size: 14px;
+    }
+    .feed-actions a {
+      color: #00d4aa;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .feed-actions a:hover {
+      color: #00f5cc;
+    }
+    .feed-channel select {
+      background: #40444b;
+      color: #dcddde;
+      border: 1px solid #72767d;
+      border-radius: 4px;
+      padding: 6px;
+      font-size: 12px;
+      width: 100%;
+    }
+    
+    /* Group Headers */
+    .group-header {
+      background: #5865f2;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      margin: 20px 0 10px 0;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .group-controls {
+      display: flex;
+      gap: 10px;
+    }
+    .group-controls button {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .group-controls button:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    /* Channels Section */
+    .channels-section {
+      background: #2f3136;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    .channels-list {
+      list-style: none;
+      padding: 0;
+      margin: 15px 0 0 0;
+    }
+    .channel-item {
+      background: #36393f;
+      border: 1px solid #40444b;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .channel-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .channel-type {
+      background: #5865f2;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .channel-id {
+      color: #72767d;
+      font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+      font-size: 12px;
+    }
+    
+    /* Bot Controls */
+    .bot-controls {
+      background: #2f3136;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    /* Output */
+    .job-output {
+      background: #36393f;
+      border: 1px solid #40444b;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 20px;
+      font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+      font-size: 13px;
+      color: #dcddde;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #72767d;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .action-bar {
+        grid-template-columns: 1fr;
+      }
+      .feed-item {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        text-align: center;
+      }
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* Hidden */
+    .hidden { display: none !important; }
+  </style>
 </head>
 <body>
   <div class="container">
     <!-- Navigation -->
-    <div style="margin-bottom: 20px;">
-      <a href="index.html">← Back to Home</a> |
-      <a href="prompt-editor.html">Prompt Editor</a> |
-      <a href="stats.html">Statistics</a>
+    <div class="nav-bar">
+      <div class="nav-links">
+        <a href="index.html">🏠 Home</a>
+        <a href="prompt-editor.html">✏️ Prompt Editor</a>
+        <a href="stats.html">📊 Statistics</a>
+      </div>
     </div>
 
-    <h1>🤖 Feed Management Dashboard</h1>
-    
+    <!-- Header -->
+    <div class="dashboard-header">
+      <h1>🤖 Feed Management Dashboard</h1>
+      <p>Manage RSS feeds and Discord channel mappings for HANU University</p>
+    </div>
+
     <!-- System Status -->
     <div id="status-section" class="hidden">
-      <div class="grid-3 mb-20">
-        <div class="status-card" style="padding: 15px; background: #e7f3ff; border-radius: 4px; text-align: center;">
-          <strong>Bot Status</strong><br>
-          <span id="bot-status">Loading...</span>
+      <div class="status-grid">
+        <div class="status-card">
+          <h3>🤖 Bot Status</h3>
+          <div class="status-value" id="bot-status">Loading...</div>
         </div>
-        <div class="status-card" style="padding: 15px; background: #e7f3ff; border-radius: 4px; text-align: center;">
-          <strong>Active Feeds</strong><br>
-          <span id="feed-count">0</span>
+        <div class="status-card">
+          <h3>📡 Active Feeds</h3>
+          <div class="status-value" id="feed-count">0</div>
         </div>
-        <div class="status-card" style="padding: 15px; background: #e7f3ff; border-radius: 4px; text-align: center;">
-          <strong>Processed Posts</strong><br>
-          <span id="seen-count">0</span>
+        <div class="status-card">
+          <h3>📨 Processed Posts</h3>
+          <div class="status-value" id="seen-count">0</div>
         </div>
       </div>
     </div>
 
     <!-- Main Dashboard -->
     <div id="main-dashboard" class="hidden">
-      <div id="dashboard-content">
-        <!-- View Controls -->
-        <p>
-          <strong>View:</strong>
-          <a href="#" onclick="setView('grouped')" id="grouped-link" style="font-weight:bold">Grouped</a> |
-          <a href="#" onclick="setView('flat')" id="flat-link">Flat</a>
-        </p>
-        <p>
-          <strong>Sort by:</strong>
-          <a href="#" onclick="setSortBy('name')" id="sort-name">Name</a> |
-          <a href="#" onclick="setSortBy('url')" id="sort-url">URL</a> |
-          <a href="#" onclick="setSortBy('channel')" id="sort-channel">Channel</a> |
-          <a href="#" onclick="setSortBy('last')" id="sort-last">Newest</a> |
-          <a href="#" onclick="setSortBy('oldest')" id="sort-oldest">Oldest</a>
-        </p>
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <div class="action-group">
+          <input type="text" id="new-feed-url" placeholder="Enter RSS feed URL...">
+          <button onclick="addFeed()" class="btn btn-primary">➕ Add Feed</button>
+        </div>
+        <div class="action-group">
+          <input type="text" id="new-group-name" placeholder="Enter group name...">
+          <button onclick="addGroup()" class="btn btn-secondary">📁 Add Group</button>
+        </div>
+      </div>
 
-        <!-- Management Controls -->
-        <div class="grid-2 mb-20">
-          <div class="form-group">
-            <input type="text" id="new-group-name" placeholder="New group name">
-            <button onclick="addGroup()" class="btn btn-secondary">Add Group</button>
-          </div>
-          <div class="form-group">
-            <input type="text" id="new-feed-url" placeholder="New feed URL" style="width: 300px;">
-            <button onclick="addFeed()" class="btn btn-primary">Add Feed</button>
+      <!-- Feeds Section -->
+      <div class="feeds-section">
+        <div class="feeds-header">
+          <h2>📋 RSS Feeds</h2>
+          <div class="view-controls">
+            <button class="view-btn active" onclick="setView('list')" id="list-btn">📄 List</button>
+            <button class="view-btn" onclick="setView('grouped')" id="grouped-btn">📁 Groups</button>
           </div>
         </div>
-
-        <!-- Feed List Container -->
+        
         <div id="feed-list-container">
-          <p>Loading feeds...</p>
+          <div class="loading">
+            <p>📡 Loading feeds...</p>
+          </div>
         </div>
       </div>
 
-      <!-- Channel Management -->
-      <h2>Discord Channels</h2>
-      <div class="form-group">
-        <input type="text" id="new-channel-id" placeholder="Discord Channel ID">
-        <button onclick="addChannel()" class="btn btn-primary">Add Channel</button>
-      </div>
-      <ul id="channels-list">
-        <li>Loading channels...</li>
-      </ul>
-
-      <!-- Utilities -->
-      <h2>Bot Controls</h2>
-      <div style="margin: 20px 0;">
-        <button onclick="runBotJob()" class="btn btn-primary">🚀 Run Bot Now</button>
-        <button onclick="clearCache()" class="btn btn-secondary">🗑️ Clear Cache</button>
-        <button onclick="refreshData()" class="btn btn-secondary">🔄 Refresh Data</button>
+      <!-- Channels Section -->
+      <div class="channels-section">
+        <h2>💬 Discord Channels</h2>
+        <div class="action-group" style="margin-top: 15px;">
+          <input type="text" id="new-channel-id" placeholder="Discord Channel ID">
+          <button onclick="addChannel()" class="btn btn-primary">➕ Add Channel</button>
+        </div>
+        
+        <ul id="channels-list" class="channels-list">
+          <li class="loading">Loading channels...</li>
+        </ul>
       </div>
 
-      <div id="job-output" style="margin-top: 20px;"></div>
+      <!-- Bot Controls -->
+      <div class="bot-controls">
+        <h2>🎮 Bot Controls</h2>
+        <div class="controls-grid">
+          <button onclick="runBotJob()" class="btn btn-success">🚀 Run Bot Now</button>
+          <button onclick="clearCache()" class="btn btn-secondary">🗑️ Clear Cache</button>
+          <button onclick="refreshData()" class="btn btn-secondary">🔄 Refresh Data</button>
+        </div>
+        
+        <div id="job-output" class="job-output hidden"></div>
+      </div>
     </div>
   </div>
 
@@ -114,8 +490,7 @@
   <script src="shared/api.js"></script>
   <script>
     // Dashboard State
-    let currentView = 'grouped';
-    let currentSort = 'name';
+    let currentView = 'list';
     let feeds = [];
     let channels = [];
     let groups = {};
@@ -127,6 +502,7 @@
       document.getElementById('status-section').classList.remove('hidden');
       document.getElementById('main-dashboard').classList.remove('hidden');
       await loadAllData();
+      parseEmojis();
     });
 
     // Load all dashboard data
@@ -134,33 +510,43 @@
       try {
         await Promise.all([
           loadFeeds(),
-          loadChannels(),
+          loadChannels(), 
           loadStatus()
         ]);
         renderDashboard();
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
-        alert('Failed to load dashboard data: ' + error.message);
+        showMessage('Failed to load dashboard data: ' + error.message, 'error');
       }
     }
 
     // Load feeds and metadata
     async function loadFeeds() {
-      const data = await window.HanuAPI.getFeeds();
-      feeds = data.feeds || [];
-      groups = data.groups || {};
-      feedMappings = data.mappings || {};
-      feedMeta = data.metadata || {};
-      
-      console.log('Loaded feeds:', feeds.length);
+      try {
+        const data = await window.HanuAPI.getFeeds();
+        feeds = data.feeds || [];
+        groups = data.groups || {};
+        feedMappings = data.mappings || {};
+        feedMeta = data.metadata || {};
+        
+        console.log(`Loaded ${feeds.length} feeds, ${Object.keys(groups).length} groups`);
+      } catch (error) {
+        console.error('Failed to load feeds:', error);
+        feeds = [];
+      }
     }
 
     // Load Discord channels
     async function loadChannels() {
-      const data = await window.HanuAPI.getChannels();
-      channels = data.channels || [];
-      
-      console.log('Loaded channels:', channels.length);
+      try {
+        const data = await window.HanuAPI.getChannels();
+        channels = data.channels || [];
+        
+        console.log(`Loaded ${channels.length} channels`);
+      } catch (error) {
+        console.error('Failed to load channels:', error);
+        channels = [];
+      }
     }
 
     // Load system status
@@ -182,11 +568,11 @@
       if (currentView === 'grouped') {
         renderGroupedView();
       } else {
-        renderFlatView();
+        renderListView();
       }
       
-      updateViewLinks();
-      initializeSortable();
+      updateViewButtons();
+      parseEmojis();
     }
 
     // Render channels list
@@ -194,19 +580,74 @@
       const container = document.getElementById('channels-list');
       
       if (channels.length === 0) {
-        container.innerHTML = '<li><em>No channels configured</em></li>';
+        container.innerHTML = '<li class="loading">No channels configured</li>';
         return;
       }
 
       container.innerHTML = channels.map(ch => `
-        <li style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
-          <span><strong>${ch.name}</strong> [${ch.type}] (ID: ${ch.id})</span>
-          <button onclick="removeChannel('${ch.id}')" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;">Remove</button>
+        <li class="channel-item">
+          <div class="channel-info">
+            <span class="channel-type">${ch.type || 'text'}</span>
+            <strong>${ch.name || `Channel ${ch.id}`}</strong>
+            <span class="channel-id">${ch.id}</span>
+          </div>
+          <button onclick="removeChannel('${ch.id}')" class="btn btn-danger">🗑️ Remove</button>
         </li>
       `).join('');
     }
 
-    // Render grouped view (your existing sophisticated layout)
+    // Render list view
+    function renderListView() {
+      const container = document.getElementById('feed-list-container');
+      
+      if (feeds.length === 0) {
+        container.innerHTML = '<div class="loading">No feeds configured</div>';
+        return;
+      }
+
+      let html = '<ul class="feed-list">';
+      
+      feeds.forEach(feed => {
+        const meta = feedMeta[feed.url] || {};
+        const channelOptions = channels.map(ch => 
+          `<option value="${ch.id}" ${feedMappings[feed.url] === ch.id ? 'selected' : ''}>${ch.name || ch.id}</option>`
+        ).join('');
+
+        const lastPost = meta.last_post ? new Date(meta.last_post).toLocaleDateString() : 'Never';
+        const pageUrl = meta.page_url || feed.pageUrl || feed.url;
+        const groupName = findFeedGroup(feed.url) || 'None';
+
+        html += `
+          <li class="feed-item" data-url="${feed.url}">
+            <div class="feed-checkbox">
+              <input type="checkbox" class="batch-checkbox" data-url="${feed.url}">
+            </div>
+            <div class="feed-title">
+              ${meta.title || feed.title || 'Unknown Feed'}
+              <small>📁 ${groupName}</small>
+            </div>
+            <div class="feed-date">📅 ${lastPost}</div>
+            <div class="feed-actions">
+              <a href="${pageUrl}" target="_blank">🔗 Visit Page</a>
+            </div>
+            <div class="feed-remove">
+              <button onclick="removeFeed('${feed.url}')" class="btn btn-danger">🗑️</button>
+            </div>
+            <div class="feed-channel">
+              <select onchange="updateFeedMapping('${feed.url}', this.value)">
+                <option value="">No Channel</option>
+                ${channelOptions}
+              </select>
+            </div>
+          </li>
+        `;
+      });
+      
+      html += '</ul>';
+      container.innerHTML = html;
+    }
+
+    // Render grouped view
     function renderGroupedView() {
       const container = document.getElementById('feed-list-container');
       
@@ -224,66 +665,70 @@
         }
       });
 
-      let html = '<ul class="feed-tree" id="group-list">';
+      let html = '';
       
       // Render groups
       Object.entries(groupedFeeds).forEach(([groupName, groupFeeds]) => {
         html += `
-          <li data-group="${groupName}">
-            <div class="group-header" onclick="toggleGroup(this)" data-group="${groupName}">
-              <span>${groupName} (${groupFeeds.length})</span>
-              <button onclick="event.stopPropagation(); toggleGroupMenu(event)" style="background: none; border: none; font-size: 16px;">⋮</button>
-              <div class="group-menu">
-                <button onclick="renameGroup('${groupName}')">Rename</button>
-                <button onclick="deleteGroup('${groupName}')">Delete</button>
-              </div>
+          <div class="group-header" onclick="toggleGroup('${groupName}')">
+            <span>📁 ${groupName.toUpperCase()} (${groupFeeds.length})</span>
+            <div class="group-controls">
+              <button onclick="event.stopPropagation(); renameGroup('${groupName}')">✏️</button>
+              <button onclick="event.stopPropagation(); deleteGroup('${groupName}')">🗑️</button>
             </div>
-            <ul class="feed-list grouped" data-group="${groupName}">
-              ${groupFeeds.map(feed => renderFeedItem(feed)).join('')}
-            </ul>
-          </li>
+          </div>
+          <ul class="feed-list" id="group-${groupName}">
+            ${groupFeeds.map(feed => renderFeedListItem(feed)).join('')}
+          </ul>
         `;
       });
 
       // Render unmapped feeds
       if (unmappedFeeds.length > 0) {
         html += `
-          <li>
-            <div class="group-header" onclick="toggleGroup(this)">Unmapped (${unmappedFeeds.length})</div>
-            <ul class="feed-list grouped" data-group="">
-              ${unmappedFeeds.map(feed => renderFeedItem(feed)).join('')}
-            </ul>
-          </li>
+          <div class="group-header">
+            <span>📂 UNMAPPED (${unmappedFeeds.length})</span>
+          </div>
+          <ul class="feed-list">
+            ${unmappedFeeds.map(feed => renderFeedListItem(feed)).join('')}
+          </ul>
         `;
       }
 
-      html += '</ul>';
       container.innerHTML = html;
     }
 
-    // Render individual feed item
-    function renderFeedItem(feed) {
+    // Render individual feed list item
+    function renderFeedListItem(feed) {
       const meta = feedMeta[feed.url] || {};
       const channelOptions = channels.map(ch => 
-        `<option value="${ch.id}" ${feedMappings[feed.url] === ch.id ? 'selected' : ''}>${ch.name}</option>`
+        `<option value="${ch.id}" ${feedMappings[feed.url] === ch.id ? 'selected' : ''}>${ch.name || ch.id}</option>`
       ).join('');
 
-      const lastPost = meta.last_post ? new Date(meta.last_post).toLocaleDateString() : 'N/A';
+      const lastPost = meta.last_post ? new Date(meta.last_post).toLocaleDateString() : 'Never';
+      const pageUrl = meta.page_url || feed.pageUrl || feed.url;
 
       return `
-        <li data-url="${feed.url}">
-          <div><input type="checkbox" class="batch-checkbox" data-url="${feed.url}"></div>
-          <div title="${meta.title || feed.url}"><strong>${meta.title || 'Loading...'}</strong></div>
-          <div>${lastPost}</div>
-          <div><a href="${feed.url}" target="_blank" style="font-size: 12px;">📡 RSS</a></div>
-          <div><button onclick="removeFeed('${feed.url}')" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;">Remove</button></div>
-          <div>
-            <select onchange="updateFeedMapping('${feed.url}', this.value)" style="font-size: 12px;">
-              <option value="">--No Channel--</option>
+        <li class="feed-item" data-url="${feed.url}">
+          <div class="feed-checkbox">
+            <input type="checkbox" class="batch-checkbox" data-url="${feed.url}">
+          </div>
+          <div class="feed-title">
+            ${meta.title || feed.title || 'Unknown Feed'}
+          </div>
+          <div class="feed-date">📅 ${lastPost}</div>
+          <div class="feed-actions">
+            <a href="${pageUrl}" target="_blank">🔗 Visit</a>
+          </div>
+          <div class="feed-remove">
+            <button onclick="removeFeed('${feed.url}')" class="btn btn-danger">🗑️</button>
+          </div>
+          <div class="feed-channel">
+            <select onchange="updateFeedMapping('${feed.url}', this.value)">
+              <option value="">No Channel</option>
               ${channelOptions}
             </select>
           </div>
-          <div><span style="font-size: 12px; color: #666;">${findFeedGroup(feed.url) || 'None'}</span></div>
         </li>
       `;
     }
@@ -291,77 +736,31 @@
     // Find which group a feed belongs to
     function findFeedGroup(feedUrl) {
       for (const [groupName, feedList] of Object.entries(groups)) {
-        if (feedList.includes(feedUrl)) {
+        if (Array.isArray(feedList) && feedList.includes(feedUrl)) {
           return groupName;
         }
       }
       return null;
     }
 
-    // Render flat view (simplified for now)
-    function renderFlatView() {
-      const container = document.getElementById('feed-list-container');
-      
-      let html = '<ul class="feed-list">';
-      html += `
-        <li style="font-weight: bold; border-bottom: 2px solid #ccc;">
-          <div>Select</div>
-          <div>Title</div>
-          <div>Last Post</div>
-          <div>Feed</div>
-          <div>Action</div>
-          <div>Channel</div>
-          <div>Group</div>
-        </li>
-      `;
-      
-      feeds.forEach(feed => {
-        html += renderFeedItem(feed);
-      });
-      
-      html += '</ul>';
-      container.innerHTML = html;
-    }
-
-    // View and sort controls
+    // View controls
     function setView(view) {
       currentView = view;
       renderDashboard();
     }
 
-    function setSortBy(sortBy) {
-      currentSort = sortBy;
-      // TODO: Implement sorting
-      renderDashboard();
+    function updateViewButtons() {
+      document.getElementById('list-btn').classList.toggle('active', currentView === 'list');
+      document.getElementById('grouped-btn').classList.toggle('active', currentView === 'grouped');
     }
 
-    function updateViewLinks() {
-      document.getElementById('grouped-link').style.fontWeight = currentView === 'grouped' ? 'bold' : 'normal';
-      document.getElementById('flat-link').style.fontWeight = currentView === 'flat' ? 'bold' : 'normal';
-    }
-
-    // Group management
-    function toggleGroup(header) {
-      const li = header.closest('li');
-      li.classList.toggle('collapsed');
-    }
-
-    function toggleGroupMenu(event) {
-      const menu = event.target.nextElementSibling;
-      // Close all other menus
-      document.querySelectorAll('.group-menu').forEach(m => {
-        if (m !== menu) m.style.display = 'none';
-      });
-      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-    }
-
-    // Feed management actions
+    // Feed management
     async function addFeed() {
       const input = document.getElementById('new-feed-url');
       const url = input.value.trim();
       
       if (!url) {
-        alert('Please enter a feed URL');
+        showMessage('Please enter a feed URL', 'warning');
         return;
       }
 
@@ -369,21 +768,21 @@
         await window.HanuAPI.addFeed(url);
         input.value = '';
         await loadAllData();
-        alert('Feed added successfully');
+        showMessage('Feed added successfully! 🎉', 'success');
       } catch (error) {
-        alert('Failed to add feed: ' + error.message);
+        showMessage('Failed to add feed: ' + error.message, 'error');
       }
     }
 
     async function removeFeed(feedUrl) {
-      if (!confirm('Remove this feed?')) return;
+      if (!confirm('Remove this feed? This action cannot be undone.')) return;
 
       try {
         await window.HanuAPI.removeFeed(feedUrl);
         await loadAllData();
-        alert('Feed removed successfully');
+        showMessage('Feed removed successfully', 'success');
       } catch (error) {
-        alert('Failed to remove feed: ' + error.message);
+        showMessage('Failed to remove feed: ' + error.message, 'error');
       }
     }
 
@@ -391,9 +790,9 @@
       try {
         await window.HanuAPI.updateFeedMapping(feedUrl, channelId);
         feedMappings[feedUrl] = channelId;
-        console.log('Updated feed mapping:', feedUrl, '→', channelId);
+        showMessage('Mapping updated! ✅', 'success');
       } catch (error) {
-        alert('Failed to update mapping: ' + error.message);
+        showMessage('Failed to update mapping: ' + error.message, 'error');
       }
     }
 
@@ -403,7 +802,7 @@
       const channelId = input.value.trim();
       
       if (!channelId) {
-        alert('Please enter a channel ID');
+        showMessage('Please enter a channel ID', 'warning');
         return;
       }
 
@@ -411,68 +810,116 @@
         await window.HanuAPI.addChannel(channelId);
         input.value = '';
         await loadAllData();
-        alert('Channel added successfully');
+        showMessage('Channel added successfully! 🎉', 'success');
       } catch (error) {
-        alert('Failed to add channel: ' + error.message);
-      }
-    }
-
-    async function removeChannel(channelId) {
-      if (!confirm('Remove this channel?')) return;
-      
-      try {
-        // TODO: Implement channel removal API
-        console.log('Remove channel:', channelId);
-      } catch (error) {
-        alert('Failed to remove channel: ' + error.message);
+        showMessage('Failed to add channel: ' + error.message, 'error');
       }
     }
 
     // Bot controls
     async function runBotJob() {
       const output = document.getElementById('job-output');
-      output.innerHTML = '<div style="padding: 10px; background: #f0f0f0; border-radius: 4px;">⏳ Running bot job...</div>';
+      output.classList.remove('hidden');
+      output.textContent = '⏳ Running bot job...';
       
       try {
         const result = await window.HanuAPI.runBotJob();
-        output.innerHTML = `<div style="padding: 10px; background: #d4edda; border-radius: 4px; margin-top: 10px;"><strong>Bot Job Result:</strong><br><pre style="margin: 10px 0; white-space: pre-wrap;">${result}</pre></div>`;
-        
-        // Refresh status after a delay
-        setTimeout(loadStatus, 5000);
+        output.textContent = `✅ Bot job completed!\n\n${result}`;
+        setTimeout(() => loadStatus(), 3000);
       } catch (error) {
-        output.innerHTML = `<div style="padding: 10px; background: #f8d7da; border-radius: 4px; margin-top: 10px;"><strong>Error:</strong> ${error.message}</div>`;
+        output.textContent = `❌ Bot job failed: ${error.message}`;
       }
     }
 
     async function clearCache() {
       try {
         await window.HanuAPI.clearCache();
-        alert('Cache cleared successfully');
+        showMessage('Cache cleared successfully! 🗑️', 'success');
       } catch (error) {
-        alert('Failed to clear cache: ' + error.message);
+        showMessage('Failed to clear cache: ' + error.message, 'error');
       }
     }
 
     async function refreshData() {
       try {
         await loadAllData();
-        alert('Data refreshed successfully');
+        showMessage('Data refreshed successfully! 🔄', 'success');
       } catch (error) {
-        alert('Failed to refresh data: ' + error.message);
+        showMessage('Failed to refresh data: ' + error.message, 'error');
       }
     }
 
-    // Initialize sortable (placeholder)
-    function initializeSortable() {
-      // TODO: Implement drag-and-drop with SortableJS
-      console.log('Sortable initialized');
+    // Group management
+    function toggleGroup(groupName) {
+      const groupList = document.getElementById(`group-${groupName}`);
+      if (groupList) {
+        groupList.style.display = groupList.style.display === 'none' ? 'block' : 'none';
+      }
     }
 
-    // Initialize when DOM loads
+    // Utility functions
+    function showMessage(message, type = 'info') {
+      // Create a toast notification
+      const toast = document.createElement('div');
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 6px;
+        color: white;
+        font-weight: 600;
+        z-index: 10000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+      `;
+      
+      switch (type) {
+        case 'success': toast.style.background = '#3ba55d'; break;
+        case 'error': toast.style.background = '#ed4245'; break;
+        case 'warning': toast.style.background = '#faa61a'; break;
+        default: toast.style.background = '#5865f2';
+      }
+      
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      // Animate in
+      setTimeout(() => {
+        toast.style.transform = 'translateX(0)';
+      }, 100);
+      
+      // Remove after 4 seconds
+      setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => document.body.removeChild(toast), 300);
+      }, 4000);
+    }
+
+    // Parse Discord-style emojis
+    function parseEmojis() {
+      twemoji.parse(document.body, {
+        folder: 'svg',
+        ext: '.svg'
+      });
+    }
+
+    // Initialize
     document.addEventListener('DOMContentLoaded', () => {
-      // Dashboard will initialize when authentication succeeds
       console.log('Dashboard page loaded');
+      parseEmojis();
     });
+
+    // Make functions globally available
+    window.setView = setView;
+    window.addFeed = addFeed;
+    window.removeFeed = removeFeed;
+    window.updateFeedMapping = updateFeedMapping;
+    window.addChannel = addChannel;
+    window.runBotJob = runBotJob;
+    window.clearCache = clearCache;
+    window.refreshData = refreshData;
+    window.toggleGroup = toggleGroup;
   </script>
 </body>
 </html>

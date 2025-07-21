@@ -20,7 +20,14 @@
     .stat-item { text-align: center; margin: 10px; }
     .stat-value { font-size: 24px; font-weight: bold; color: #007acc; }
     .stat-label { font-size: 14px; color: #666; }
+    img.emoji {
+      height: 1em;
+      width: 1em;
+      margin: 0 0.05em 0 0.1em;
+      vertical-align: -0.1em;
+    }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -208,6 +215,23 @@
       document.getElementById('total-posts').textContent = Math.floor(Math.random() * 500) + 1200; // Mock total
       document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
       document.getElementById('system-status').textContent = '🟢 Online';
+      parseEmojis(); // Re-parse emojis after updating stats
+    }
+
+    // Initialize Discord-style emoji rendering
+    document.addEventListener('DOMContentLoaded', () => {
+      twemoji.parse(document.body, {
+        folder: 'svg',
+        ext: '.svg'
+      });
+    });
+
+    // Re-parse emojis after content updates
+    function parseEmojis() {
+      twemoji.parse(document.body, {
+        folder: 'svg',
+        ext: '.svg'
+      });
     }
   </script>
 </body>
