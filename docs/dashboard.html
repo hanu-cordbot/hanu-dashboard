@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>HANU Feed Dashboard</title>
+  <link href="shared/common.css" rel="stylesheet">
+  <style>
+    /* Feed-specific grid layouts */
+    ul.feed-list:not([data-group]) li { 
+      display: grid; 
+      grid-template-columns: 30px 250px 100px 1fr 80px 140px 140px; 
+      align-items: center; margin-bottom: 5px; column-gap: 10px; 
+    }
+    ul.feed-list.grouped li {
+      display: grid;
+      grid-template-columns: 30px 250px 100px 1fr 80px 140px 140px;
+      align-items: center; margin-bottom: 5px; column-gap: 10px;
+    }
+    ul.feed-list li div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .feed-tree ul { list-style: none; padding-left: 20px; margin: 0; }
+    .feed-tree li.collapsed > ul.feed-list.grouped { height: 0; overflow: hidden; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Navigation -->
+    <div style="margin-bottom: 20px;">
+      <a href="index.html">← Back to Home</a> |
+      <a href="prompt-editor.html">Prompt Editor</a> |
+      <a href="stats.html">Statistics</a>
+    </div>
+
+    <h1>🤖 Feed Management Dashboard</h1>
+    
+    <!-- System Status -->
+    <div id="status-section" class="hidden">
+      <div class="grid-3 mb-20">
+        <div class="status-card" style="padding: 15px; background: #e7f3ff; border-radius: 4px; text-align: center;">
+          <strong>Bot Status</strong><br>
+          <span id="bot-status">Loading...</span>
+        </div>
+        <div class="status-card" style="padding: 15px; background: #e7f3ff; border-radius: 4px; text-align: center;">
+          <strong>Active Feeds</strong><br>
+          <span id="feed-count">0</span>
+        </div>
+        <div class="status-card" style="padding: 15px; background: #e7f3ff; border-radius: 4px; text-align: center;">
+          <strong>Processed Posts</strong><br>
+          <span id="seen-count">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="main-dashboard" class="hidden">
+      <div id="dashboard-content">
+        <!-- View Controls -->
+        <p>
+          <strong>View:</strong>
+          <a href="#" onclick="setView('grouped')" id="grouped-link" style="font-weight:bold">Grouped</a> |
+          <a href="#" onclick="setView('flat')" id="flat-link">Flat</a>
+        </p>
+        <p>
+          <strong>Sort by:</strong>
+          <a href="#" onclick="setSortBy('name')" id="sort-name">Name</a> |
+          <a href="#" onclick="setSortBy('url')" id="sort-url">URL</a> |
+          <a href="#" onclick="setSortBy('channel')" id="sort-channel">Channel</a> |
+          <a href="#" onclick="setSortBy('last')" id="sort-last">Newest</a> |
+          <a href="#" onclick="setSortBy('oldest')" id="sort-oldest">Oldest</a>
+        </p>
+
+        <!-- Management Controls -->
+        <div class="grid-2 mb-20">
+          <div class="form-group">
+            <input type="text" id="new-group-name" placeholder="New group name">
+            <button onclick="addGroup()" class="btn btn-secondary">Add Group</button>
+          </div>
+          <div class="form-group">
+            <input type="text" id="new-feed-url" placeholder="New feed URL" style="width: 300px;">
+            <button onclick="addFeed()" class="btn btn-primary">Add Feed</button>
+          </div>
+        </div>
+
+        <!-- Feed List Container -->
+        <div id="feed-list-container">
+          <p>Loading feeds...</p>
+        </div>
+      </div>
+
+      <!-- Channel Management -->
+      <h2>Discord Channels</h2>
+      <div class="form-group">
+        <input type="text" id="new-channel-id" placeholder="Discord Channel ID">
+        <button onclick="addChannel()" class="btn btn-primary">Add Channel</button>
+      </div>
+      <ul id="channels-list">
+        <li>Loading channels...</li>
+      </ul>
+
+      <!-- Utilities -->
+      <h2>Bot Controls</h2>
+      <div style="margin: 20px 0;">
+        <button onclick="runBotJob()" class="btn btn-primary">🚀 Run Bot Now</button>
+        <button onclick="clearCache()" class="btn btn-secondary">🗑️ Clear Cache</button>
+        <button onclick="refreshData()" class="btn btn-secondary">🔄 Refresh Data</button>
+      </div>
+
+      <div id="job-output" style="margin-top: 20px;"></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="shared/auth.js"></script>
+  <script src="shared/api.js"></script>
+  <script>
+    // Dashboard State
+    let currentView = 'grouped';
+    let currentSort = 'name';
+    let feeds = [];
+    let channels = [];
+    let groups = {};
+    let feedMappings = {};
+    let feedMeta = {};
+
+    // Initialize dashboard when authenticated
+    window.addEventListener('hanu-authenticated', async () => {
+      document.getElementById('status-section').classList.remove('hidden');
+      document.getElementById('main-dashboard').classList.remove('hidden');
+      await loadAllData();
+    });
+
+    // Load all dashboard data
+    async function loadAllData() {
+      try {
+        await Promise.all([
+          loadFeeds(),
+          loadChannels(),
+          loadStatus()
+        ]);
+        renderDashboard();
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+        alert('Failed to load dashboard data: ' + error.message);
+      }
+    }
+
+    // Load feeds and metadata
+    async function loadFeeds() {
+      const data = await window.HanuAPI.getFeeds();
+      feeds = data.feeds || [];
+      groups = data.groups || {};
+      feedMappings = data.mappings || {};
+      feedMeta = data.metadata || {};
+      
+      console.log('Loaded feeds:', feeds.length);
+    }
+
+    // Load Discord channels
+    async function loadChannels() {
+      const data = await window.HanuAPI.getChannels();
+      channels = data.channels || [];
+      
+      console.log('Loaded channels:', channels.length);
+    }
+
+    // Load system status
+    async function loadStatus() {
+      try {
+        const data = await window.HanuAPI.getSystemStatus();
+        document.getElementById('bot-status').textContent = data.workerStatus || 'Unknown';
+        document.getElementById('feed-count').textContent = feeds.length || 0;
+        document.getElementById('seen-count').textContent = data.seenCount || 0;
+      } catch (error) {
+        console.error('Failed to load status:', error);
+      }
+    }
+
+    // Render main dashboard
+    function renderDashboard() {
+      renderChannelsList();
+      
+      if (currentView === 'grouped') {
+        renderGroupedView();
+      } else {
+        renderFlatView();
+      }
+      
+      updateViewLinks();
+      initializeSortable();
+    }
+
+    // Render channels list
+    function renderChannelsList() {
+      const container = document.getElementById('channels-list');
+      
+      if (channels.length === 0) {
+        container.innerHTML = '<li><em>No channels configured</em></li>';
+        return;
+      }
+
+      container.innerHTML = channels.map(ch => `
+        <li style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+          <span><strong>${ch.name}</strong> [${ch.type}] (ID: ${ch.id})</span>
+          <button onclick="removeChannel('${ch.id}')" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;">Remove</button>
+        </li>
+      `).join('');
+    }
+
+    // Render grouped view (your existing sophisticated layout)
+    function renderGroupedView() {
+      const container = document.getElementById('feed-list-container');
+      
+      // Group feeds
+      const groupedFeeds = {};
+      const unmappedFeeds = [];
+
+      feeds.forEach(feed => {
+        const group = findFeedGroup(feed.url);
+        if (group) {
+          if (!groupedFeeds[group]) groupedFeeds[group] = [];
+          groupedFeeds[group].push(feed);
+        } else {
+          unmappedFeeds.push(feed);
+        }
+      });
+
+      let html = '<ul class="feed-tree" id="group-list">';
+      
+      // Render groups
+      Object.entries(groupedFeeds).forEach(([groupName, groupFeeds]) => {
+        html += `
+          <li data-group="${groupName}">
+            <div class="group-header" onclick="toggleGroup(this)" data-group="${groupName}">
+              <span>${groupName} (${groupFeeds.length})</span>
+              <button onclick="event.stopPropagation(); toggleGroupMenu(event)" style="background: none; border: none; font-size: 16px;">⋮</button>
+              <div class="group-menu">
+                <button onclick="renameGroup('${groupName}')">Rename</button>
+                <button onclick="deleteGroup('${groupName}')">Delete</button>
+              </div>
+            </div>
+            <ul class="feed-list grouped" data-group="${groupName}">
+              ${groupFeeds.map(feed => renderFeedItem(feed)).join('')}
+            </ul>
+          </li>
+        `;
+      });
+
+      // Render unmapped feeds
+      if (unmappedFeeds.length > 0) {
+        html += `
+          <li>
+            <div class="group-header" onclick="toggleGroup(this)">Unmapped (${unmappedFeeds.length})</div>
+            <ul class="feed-list grouped" data-group="">
+              ${unmappedFeeds.map(feed => renderFeedItem(feed)).join('')}
+            </ul>
+          </li>
+        `;
+      }
+
+      html += '</ul>';
+      container.innerHTML = html;
+    }
+
+    // Render individual feed item
+    function renderFeedItem(feed) {
+      const meta = feedMeta[feed.url] || {};
+      const channelOptions = channels.map(ch => 
+        `<option value="${ch.id}" ${feedMappings[feed.url] === ch.id ? 'selected' : ''}>${ch.name}</option>`
+      ).join('');
+
+      const lastPost = meta.last_post ? new Date(meta.last_post).toLocaleDateString() : 'N/A';
+
+      return `
+        <li data-url="${feed.url}">
+          <div><input type="checkbox" class="batch-checkbox" data-url="${feed.url}"></div>
+          <div title="${meta.title || feed.url}"><strong>${meta.title || 'Loading...'}</strong></div>
+          <div>${lastPost}</div>
+          <div><a href="${feed.url}" target="_blank" style="font-size: 12px;">📡 RSS</a></div>
+          <div><button onclick="removeFeed('${feed.url}')" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;">Remove</button></div>
+          <div>
+            <select onchange="updateFeedMapping('${feed.url}', this.value)" style="font-size: 12px;">
+              <option value="">--No Channel--</option>
+              ${channelOptions}
+            </select>
+          </div>
+          <div><span style="font-size: 12px; color: #666;">${findFeedGroup(feed.url) || 'None'}</span></div>
+        </li>
+      `;
+    }
+
+    // Find which group a feed belongs to
+    function findFeedGroup(feedUrl) {
+      for (const [groupName, feedList] of Object.entries(groups)) {
+        if (feedList.includes(feedUrl)) {
+          return groupName;
+        }
+      }
+      return null;
+    }
+
+    // Render flat view (simplified for now)
+    function renderFlatView() {
+      const container = document.getElementById('feed-list-container');
+      
+      let html = '<ul class="feed-list">';
+      html += `
+        <li style="font-weight: bold; border-bottom: 2px solid #ccc;">
+          <div>Select</div>
+          <div>Title</div>
+          <div>Last Post</div>
+          <div>Feed</div>
+          <div>Action</div>
+          <div>Channel</div>
+          <div>Group</div>
+        </li>
+      `;
+      
+      feeds.forEach(feed => {
+        html += renderFeedItem(feed);
+      });
+      
+      html += '</ul>';
+      container.innerHTML = html;
+    }
+
+    // View and sort controls
+    function setView(view) {
+      currentView = view;
+      renderDashboard();
+    }
+
+    function setSortBy(sortBy) {
+      currentSort = sortBy;
+      // TODO: Implement sorting
+      renderDashboard();
+    }
+
+    function updateViewLinks() {
+      document.getElementById('grouped-link').style.fontWeight = currentView === 'grouped' ? 'bold' : 'normal';
+      document.getElementById('flat-link').style.fontWeight = currentView === 'flat' ? 'bold' : 'normal';
+    }
+
+    // Group management
+    function toggleGroup(header) {
+      const li = header.closest('li');
+      li.classList.toggle('collapsed');
+    }
+
+    function toggleGroupMenu(event) {
+      const menu = event.target.nextElementSibling;
+      // Close all other menus
+      document.querySelectorAll('.group-menu').forEach(m => {
+        if (m !== menu) m.style.display = 'none';
+      });
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // Feed management actions
+    async function addFeed() {
+      const input = document.getElementById('new-feed-url');
+      const url = input.value.trim();
+      
+      if (!url) {
+        alert('Please enter a feed URL');
+        return;
+      }
+
+      try {
+        await window.HanuAPI.addFeed(url);
+        input.value = '';
+        await loadAllData();
+        alert('Feed added successfully');
+      } catch (error) {
+        alert('Failed to add feed: ' + error.message);
+      }
+    }
+
+    async function removeFeed(feedUrl) {
+      if (!confirm('Remove this feed?')) return;
+
+      try {
+        await window.HanuAPI.removeFeed(feedUrl);
+        await loadAllData();
+        alert('Feed removed successfully');
+      } catch (error) {
+        alert('Failed to remove feed: ' + error.message);
+      }
+    }
+
+    async function updateFeedMapping(feedUrl, channelId) {
+      try {
+        await window.HanuAPI.updateFeedMapping(feedUrl, channelId);
+        feedMappings[feedUrl] = channelId;
+        console.log('Updated feed mapping:', feedUrl, '→', channelId);
+      } catch (error) {
+        alert('Failed to update mapping: ' + error.message);
+      }
+    }
+
+    // Channel management
+    async function addChannel() {
+      const input = document.getElementById('new-channel-id');
+      const channelId = input.value.trim();
+      
+      if (!channelId) {
+        alert('Please enter a channel ID');
+        return;
+      }
+
+      try {
+        await window.HanuAPI.addChannel(channelId);
+        input.value = '';
+        await loadAllData();
+        alert('Channel added successfully');
+      } catch (error) {
+        alert('Failed to add channel: ' + error.message);
+      }
+    }
+
+    async function removeChannel(channelId) {
+      if (!confirm('Remove this channel?')) return;
+      
+      try {
+        // TODO: Implement channel removal API
+        console.log('Remove channel:', channelId);
+      } catch (error) {
+        alert('Failed to remove channel: ' + error.message);
+      }
+    }
+
+    // Bot controls
+    async function runBotJob() {
+      const output = document.getElementById('job-output');
+      output.innerHTML = '<div style="padding: 10px; background: #f0f0f0; border-radius: 4px;">⏳ Running bot job...</div>';
+      
+      try {
+        const result = await window.HanuAPI.runBotJob();
+        output.innerHTML = `<div style="padding: 10px; background: #d4edda; border-radius: 4px; margin-top: 10px;"><strong>Bot Job Result:</strong><br><pre style="margin: 10px 0; white-space: pre-wrap;">${result}</pre></div>`;
+        
+        // Refresh status after a delay
+        setTimeout(loadStatus, 5000);
+      } catch (error) {
+        output.innerHTML = `<div style="padding: 10px; background: #f8d7da; border-radius: 4px; margin-top: 10px;"><strong>Error:</strong> ${error.message}</div>`;
+      }
+    }
+
+    async function clearCache() {
+      try {
+        await window.HanuAPI.clearCache();
+        alert('Cache cleared successfully');
+      } catch (error) {
+        alert('Failed to clear cache: ' + error.message);
+      }
+    }
+
+    async function refreshData() {
+      try {
+        await loadAllData();
+        alert('Data refreshed successfully');
+      } catch (error) {
+        alert('Failed to refresh data: ' + error.message);
+      }
+    }
+
+    // Initialize sortable (placeholder)
+    function initializeSortable() {
+      // TODO: Implement drag-and-drop with SortableJS
+      console.log('Sortable initialized');
+    }
+
+    // Initialize when DOM loads
+    document.addEventListener('DOMContentLoaded', () => {
+      // Dashboard will initialize when authentication succeeds
+      console.log('Dashboard page loaded');
+    });
+  </script>
+</body>
+</html>

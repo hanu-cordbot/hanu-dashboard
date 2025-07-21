@@ -1,47 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Hanu-Cordbot Admin</title>
-<style>
- body{font-family:system-ui;padding:2rem;max-width:600px;margin:auto}
- input,button{font-size:1rem;padding:.5rem} button{cursor:pointer}
- pre{white-space:pre-wrap;border:1px solid #bbb;padding:1rem;margin-top:1rem;
-     font-family:ui-monospace,monospace;background:#f9f9f9}
-</style>
-</head><body>
-<h2>Hanu-Cordbot – Manual Run</h2>
+  <meta charset="UTF-8">
+  <title>HANU Feed Monitor</title>
+  <link href="shared/common.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <h1>🎓 HANU Feed Monitor</h1>
+    <p>Real-time RSS feed monitoring for Hanoi University Discord</p>
+    
+    <div class="nav-grid">
+      <a href="dashboard.html" class="nav-card">
+        <h3>📋 Feed Management</h3>
+        <p>Configure RSS feeds and Discord channel mappings</p>
+      </a>
+      
+      <a href="prompt-editor.html" class="nav-card">
+        <h3>✏️ Prompt Editor</h3>
+        <p>Configure AI system prompts and test responses</p>
+      </a>
+      
+      <a href="stats.html" class="nav-card">
+        <h3>📊 Statistics</h3>
+        <p>View bot performance and system metrics</p>
+      </a>
+    </div>
+    
+    <div class="status-bar">
+      <span id="connection-status">🔴 Not Connected</span>
+      <button onclick="testConnection()">Test Connection</button>
+    </div>
+  </div>
 
-<label>AUTH_TOKEN:
- <input id="tok" type="password" size="44"
-        placeholder="paste once; stored only in this tab">
-</label>
-<button id="run">▶︎ Run</button>
+  <script src="shared/auth.js"></script>
+  <script>
+    async function testConnection() {
+      const status = document.getElementById('connection-status');
+      status.textContent = '⏳ Testing...';
+      
+      try {
+        const isConnected = await window.HanuAuth.testConnection();
+        status.textContent = isConnected ? '🟢 Connected' : '🔴 Connection Failed';
+      } catch (error) {
+        status.textContent = '🔴 Connection Error';
+      }
+    }
 
-<pre id="log">Paste the token, then click Run…</pre>
-
-<script>
-const WORKER_URL = "https://hanu-cordbot.snacky496.workers.dev/run";
-const tok = document.getElementById("tok");
-const log = document.getElementById("log");
-
-/* restore token for this tab */
-tok.value = sessionStorage.getItem("AUTH_TOKEN") || "";
-
-document.getElementById("run").onclick = async () => {
-  if (!tok.value.trim()) { alert("Paste the token first"); return; }
-  sessionStorage.setItem("AUTH_TOKEN", tok.value.trim());
-
-  log.textContent = "⏳ Calling the Worker…";
-  try {
-    const res  = await fetch(WORKER_URL, {
-      headers: { Authorization: `Bearer ${tok.value.trim()}` }
-    });
-    const text = await res.text();
-    log.textContent = `HTTP ${res.status}\n\n${text.replace(/\\n/g,"\n")}`;
-  } catch (err) {
-    log.textContent = "⚠️ " + err;
-  }
-};
-</script>
-</body></html>
+    // Auto-test on load
+    document.addEventListener('DOMContentLoaded', testConnection);
+  </script>
+</body>
+</html>
