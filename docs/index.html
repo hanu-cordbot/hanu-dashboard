@@ -140,7 +140,7 @@
       
       <label>Sort by:</label>
       <a href="#" onclick="setSortBy('name')" id="sort-name">Name</a>
-      <a href="#" onclick="setSortBy('date')" class="active" id="sort-date">Date ↓</a>
+      <a href="#" onclick="setSortBy('date')" class="active" id="sort-date">Date ↑</a>
       <a href="#" onclick="setSortBy('channel')" id="sort-channel">Channel</a>
       
       <label>Filter:</label>
@@ -178,7 +178,7 @@
     let currentGroupBy = 'status'; // ← Default to status
     let currentSort = 'date'; // ← Default to date
     let currentFilter = 'all';
-    let sortOrder = { name: 'asc', date: 'desc', channel: 'asc' }; // Date descending by default
+    let sortOrder = { name: 'asc', date: 'asc', channel: 'asc' }; // Date descending by default
 
     // Load data on page load
     document.addEventListener('DOMContentLoaded', async () => {
