@@ -17,11 +17,13 @@
       <a href="stats.html">📊 Statistics</a>
     </div>
 
+
     <!-- Header -->
     <div class="header">
       <h1>🤖 Feed Management Dashboard</h1>
       <p>Manage RSS feeds and Discord channel mappings for HANU University</p>
     </div>
+
 
     <!-- Authentication -->
     <div class="auth-section" id="auth-section">
@@ -30,6 +32,7 @@
       <button id="login-button">Login</button>
       <div id="auth-status" style="margin-top: 10px;"></div>
     </div>
+
 
     <!-- Main Content -->
     <div id="main-content" class="hidden">
@@ -49,6 +52,7 @@
         </div>
       </div>
 
+
       <!-- Quick Add Forms -->
       <div class="form-row">
         <div class="form-group">
@@ -61,6 +65,7 @@
         </div>
       </div>
 
+
       <!-- View Controls -->
       <div class="controls">
         <label>View:</label>
@@ -68,6 +73,7 @@
           <button class="btn btn-outline active" onclick="setView('flat')" id="view-flat">📄 Flat</button>
           <button class="btn btn-outline" onclick="setView('grouped')" id="view-grouped">📁 Grouped</button>
         </div>
+
 
         <label>Sort:</label>
         <div class="btn-group">
@@ -77,6 +83,7 @@
           <button class="btn btn-outline" onclick="setSort('group')" id="sort-group">Group</button>
         </div>
 
+
         <label>Filter:</label>
         <div class="btn-group">
           <button class="btn btn-outline active" onclick="setFilter('all')" id="filter-all">All</button>
@@ -84,6 +91,7 @@
           <button class="btn btn-outline" onclick="setFilter('inactive')" id="filter-inactive">Inactive</button>
         </div>
       </div>
+
 
       <!-- Feeds Section -->
       <div class="section">
@@ -93,17 +101,12 @@
         </div>
       </div>
 
+
       <!-- Channels Section -->
       <div class="section">
         <h2>💬 Discord Channels</h2>
         <div class="form-group mb-15">
           <input type="text" id="new-channel-id" placeholder="Discord Channel ID">
-          <input type="text" id="new-channel-name" placeholder="Channel Name (optional)">
-          <select id="new-channel-type">
-            <option value="text">Text Channel</option>
-            <option value="forum">Forum Channel</option>
-            <option value="voice">Voice Channel</option>
-          </select>
           <button onclick="addChannel()" class="btn btn-primary">➕ Add Channel</button>
         </div>
         
@@ -111,6 +114,7 @@
           <div class="loading">Loading channels...</div>
         </div>
       </div>
+
 
       <!-- Bot Controls -->
       <div class="section">
@@ -127,10 +131,12 @@
     </div>
   </div>
 
+
   <!-- Scripts -->
   <script type="module">
     import HanuAuth from './shared/auth.js';
     import HanuAPI from './shared/api.js';
+
 
     // Dashboard state
     let feeds = [];
@@ -141,6 +147,7 @@
     let currentSort = 'name';
     let currentFilter = 'all';
     let feedMetadata = {};
+
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
@@ -166,6 +173,7 @@
       }
     });
 
+
     // Load all dashboard data
     async function loadAllData() {
       try {
@@ -175,15 +183,18 @@
           HanuAPI.getSystemStatus()
         ]);
 
+
         feeds = feedsData.feeds || [];
         channels = channelsData.channels || [];
         groups = feedsData.groups || {};
         feedMappings = feedsData.mappings || {};
         feedMetadata = feedsData.metadata || {};
 
+
         updateStatusCards(statusData);
         renderFeeds();
         renderChannels();
+
 
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
@@ -191,12 +202,14 @@
       }
     }
 
+
     // Update status cards
     function updateStatusCards(statusData) {
       document.getElementById('bot-status').textContent = statusData.workerStatus || 'Unknown';
       document.getElementById('feed-count').textContent = feeds.length;
       document.getElementById('seen-count').textContent = statusData.seenCount || 0;
     }
+
 
     // Render feeds based on current view/sort/filter
     function renderFeeds() {
@@ -207,6 +220,7 @@
         return;
       }
 
+
       // Apply filters
       let filteredFeeds = feeds.filter(feed => {
         if (currentFilter === 'all') return true;
@@ -214,6 +228,7 @@
         if (currentFilter === 'inactive') return !isActiveFeed(feed);
         return true;
       });
+
 
       // Apply sorting
       filteredFeeds.sort((a, b) => {
@@ -231,6 +246,7 @@
         }
       });
 
+
       if (currentView === 'grouped') {
         renderGroupedFeeds(filteredFeeds);
       } else {
@@ -239,6 +255,7 @@
       
       twemoji.parse(container, { folder: 'svg', ext: '.svg' });
     }
+
 
     // Render flat feed list
     function renderFlatFeeds(feedList) {
@@ -259,6 +276,7 @@
           <tbody>
       `;
 
+
       feedList.forEach(feed => {
         const title = getTitle(feed);
         const lastPost = formatDate(getLastPost(feed));
@@ -266,6 +284,7 @@
         const groupName = getGroup(feed) || 'None';
         const pageUrl = getPageUrl(feed);
         const isActive = isActiveFeed(feed);
+
 
         html += `
           <tr class="${isActive ? '' : 'text-muted'}">
@@ -281,7 +300,7 @@
               <select onchange="updateFeedChannel('${feed.url}', this.value)" style="font-size: 12px;">
                 <option value="">No Channel</option>
                 ${channels.map(ch => 
-                  `<option value="${ch.id}" ${feedMappings[feed.url] === ch.id ? 'selected' : ''}>${ch.name || ch.id}</option>`
+                  `<option value="${ch.id}" ${feedMappings[feed.url] == ch.id ? 'selected' : ''}>${ch.name || ch.id}</option>`
                 ).join('')}
               </select>
             </td>
@@ -303,9 +322,11 @@
         `;
       });
 
+
       html += '</tbody></table>';
       container.innerHTML = html;
     }
+
 
     // Render grouped feed list
     function renderGroupedFeeds(feedList) {
@@ -318,6 +339,7 @@
         if (!groupedFeeds[group]) groupedFeeds[group] = [];
         groupedFeeds[group].push(feed);
       });
+
 
       let html = '';
       Object.entries(groupedFeeds).forEach(([groupName, groupFeeds]) => {
@@ -358,8 +380,10 @@
         `;
       });
 
+
       container.innerHTML = html;
     }
+
 
     // Render channels list
     function renderChannels() {
@@ -370,15 +394,17 @@
         return;
       }
 
+
       let html = '';
       channels.forEach(channel => {
-        const feedCount = Object.values(feedMappings).filter(id => id === channel.id).length;
+        const feedCount = Object.values(feedMappings).filter(id => id == channel.id).length;
+        const emoji = channel.type === 'forum' ? '💬' : (channel.type === 'voice' ? '🔊' : '📝');
         
         html += `
           <div class="card mb-10">
             <div class="flex-between">
               <div>
-                <strong>${channel.name || channel.id}</strong>
+                <strong>${emoji} ${channel.name || `Channel-${channel.id.toString().slice(-4)}`}</strong>
                 <span class="badge bg-secondary">${channel.type || 'text'}</span>
                 <small class="text-muted">ID: ${channel.id}</small>
                 <span class="badge bg-info">${feedCount} feeds</span>
@@ -389,21 +415,26 @@
         `;
       });
 
+
       container.innerHTML = html;
     }
+
 
     // Helper functions
     function getTitle(feed) {
       return feedMetadata[feed.url]?.title || feed.title || 'Unknown Feed';
     }
 
+
     function getLastPost(feed) {
       return feedMetadata[feed.url]?.last_post || feed.lastPost || null;
     }
 
+
     function getPageUrl(feed) {
       return feedMetadata[feed.url]?.page_url || feed.pageUrl || feed.url;
     }
+
 
     function getGroup(feed) {
       for (const [groupName, feedList] of Object.entries(groups)) {
@@ -414,12 +445,14 @@
       return null;
     }
 
+
     function getChannelName(feed) {
       const channelId = feedMappings[feed.url];
       if (!channelId) return 'None';
-      const channel = channels.find(ch => ch.id === channelId);
-      return channel ? (channel.name || channel.id) : 'Unknown';
+      const channel = channels.find(ch => ch.id == channelId);
+      return channel ? (channel.name || `Channel-${channelId.toString().slice(-4)}`) : 'Unknown';
     }
+
 
     function isActiveFeed(feed) {
       const lastPost = getLastPost(feed);
@@ -427,6 +460,7 @@
       const daysSince = (Date.now() - new Date(lastPost)) / (1000 * 60 * 60 * 24);
       return daysSince <= 7;
     }
+
 
     function formatDate(dateStr) {
       if (!dateStr) return 'Never';
@@ -442,6 +476,7 @@
       }
     }
 
+
     // View/Sort/Filter controls
     window.setView = function(view) {
       currentView = view;
@@ -449,6 +484,7 @@
       document.getElementById('view-grouped').classList.toggle('active', view === 'grouped');
       renderFeeds();
     };
+
 
     window.setSort = function(sort) {
       currentSort = sort;
@@ -459,6 +495,7 @@
       renderFeeds();
     };
 
+
     window.setFilter = function(filter) {
       currentFilter = filter;
       document.querySelectorAll('[id^="filter-"]').forEach(btn => {
@@ -467,6 +504,7 @@
       document.getElementById(`filter-${filter}`).classList.add('active');
       renderFeeds();
     };
+
 
     // Feed management
     window.addFeed = async function() {
@@ -478,6 +516,7 @@
         return;
       }
 
+
       try {
         await HanuAPI.addFeed(url);
         input.value = '';
@@ -488,8 +527,10 @@
       }
     };
 
+
     window.removeFeed = async function(feedUrl) {
       if (!confirm('Are you sure you want to remove this feed?')) return;
+
 
       try {
         await HanuAPI.removeFeed(feedUrl);
@@ -499,6 +540,7 @@
         showAlert('Failed to remove feed: ' + error.message, 'danger');
       }
     };
+
 
     window.updateFeedChannel = async function(feedUrl, channelId) {
       try {
@@ -510,6 +552,7 @@
       }
     };
 
+
     window.updateFeedGroup = async function(feedUrl, groupName) {
       try {
         await HanuAPI.updateFeedGroup(feedUrl, groupName);
@@ -519,6 +562,7 @@
         showAlert('Failed to update group: ' + error.message, 'danger');
       }
     };
+
 
     // Group management
     window.addGroup = async function() {
@@ -530,6 +574,7 @@
         return;
       }
 
+
       try {
         await HanuAPI.addGroup(name);
         input.value = '';
@@ -540,8 +585,10 @@
       }
     };
 
+
     window.removeGroup = async function(groupName) {
       if (!confirm(`Remove group "${groupName}"? Feeds will become ungrouped.`)) return;
+
 
       try {
         await HanuAPI.removeGroup(groupName);
@@ -552,6 +599,7 @@
       }
     };
 
+
     window.toggleGroup = function(groupName) {
       const groupElement = document.getElementById(`group-${groupName}`);
       if (groupElement) {
@@ -559,36 +607,34 @@
       }
     };
 
+
     // Channel management
     window.addChannel = async function() {
       const idInput = document.getElementById('new-channel-id');
-      const nameInput = document.getElementById('new-channel-name');
-      const typeSelect = document.getElementById('new-channel-type');
       
       const channelId = idInput.value.trim();
-      const name = nameInput.value.trim();
-      const type = typeSelect.value;
       
       if (!channelId) {
         showAlert('Please enter a channel ID', 'warning');
         return;
       }
 
+
       try {
-        await HanuAPI.addChannel(channelId, name, type);
+        await HanuAPI.addChannel(channelId);
         idInput.value = '';
-        nameInput.value = '';
-        typeSelect.value = 'text';
         await loadAllData();
-        showAlert('Channel added successfully! 💬', 'success');
+        showAlert('Channel added successfully! Real name will be fetched on next bot run. 💬', 'success');
       } catch (error) {
         showAlert('Failed to add channel: ' + error.message, 'danger');
       }
     };
 
+
     window.removeChannel = async function(channelId) {
-      const feedCount = Object.values(feedMappings).filter(id => id === channelId).length;
+      const feedCount = Object.values(feedMappings).filter(id => id == channelId).length;
       if (feedCount > 0 && !confirm(`This channel has ${feedCount} mapped feeds. Remove anyway?`)) return;
+
 
       try {
         await HanuAPI.removeChannel(channelId);
@@ -599,6 +645,7 @@
       }
     };
 
+
     // Bot controls
     window.runBot = async function() {
       const button = document.getElementById('run-bot-btn');
@@ -608,6 +655,7 @@
       button.innerHTML = '<span class="loading-spinner"></span> Running...';
       output.classList.remove('hidden');
       output.textContent = '⏳ Starting bot job...';
+
 
       try {
         const result = await HanuAPI.runBot();
@@ -626,6 +674,7 @@
       }
     };
 
+
     window.clearCache = async function() {
       try {
         await HanuAPI.clearCache();
@@ -634,6 +683,7 @@
         showAlert('Failed to clear cache: ' + error.message, 'danger');
       }
     };
+
 
     window.refreshData = async function() {
       try {
@@ -644,6 +694,7 @@
       }
     };
 
+
     window.exportData = function() {
       const data = {
         feeds,
@@ -653,6 +704,7 @@
         feedMetadata,
         exportedAt: new Date().toISOString()
       };
+
 
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -666,6 +718,7 @@
       
       showAlert('Data exported successfully! 📥', 'success');
     };
+
 
     // Alert helper
     function showAlert(message, type = 'info') {
