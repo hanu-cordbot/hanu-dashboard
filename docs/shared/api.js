@@ -103,13 +103,13 @@ class HanuAPI {
     return this.post('/api/feed-groups', { feedUrl, groupName });
   }
   
-  // Channel Management
+  // Channel Management - SIMPLIFIED
   async getChannels() {
     return this.get('/api/channels');
   }
   
-  async addChannel(channelId, name = null, type = 'text') {
-    return this.post('/api/channels', { channelId, name, type });
+  async addChannel(channelId) {
+    return this.post('/api/channels', { channelId });
   }
   
   async removeChannel(channelId) {
@@ -127,6 +127,10 @@ class HanuAPI {
   
   async testPrompt(content) {
     return this.post('/api/prompt/test', { content });
+  }
+  
+  async testRandomPrompt(config) {
+    return this.post('/api/prompt/test-random', config);
   }
   
   // Statistics
