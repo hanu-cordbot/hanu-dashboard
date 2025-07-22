@@ -29,6 +29,8 @@
     .controls a { color: #007bff; text-decoration: none; margin: 0 8px; padding: 4px 8px; border-radius: 4px; }
     .controls a:hover { text-decoration: underline; background: rgba(0, 123, 255, 0.1); }
     .controls a.active { font-weight: 600; color: #495057; background: #007bff; color: white; }
+    .controls .group-by-section { display: none; } /* Hidden by default */
+    .controls .group-by-section.show { display: flex; align-items: center; gap: 10px; }
     
     /* Table layout - matching your old design */
     .feeds-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -126,10 +128,12 @@
       <a href="#" onclick="setView('flat')" class="active" id="flat-link">Flat</a>
       <a href="#" onclick="setView('grouped')" id="grouped-link">Grouped</a>
       
-      <label>Group by:</label>
-      <a href="#" onclick="setGroupBy('none')" class="active" id="group-none">None</a>
-      <a href="#" onclick="setGroupBy('category')" id="group-category">Category</a>
-      <a href="#" onclick="setGroupBy('status')" id="group-status">Status</a>
+      <!-- Group by section - only shows when grouped view is active -->
+      <div class="group-by-section" id="group-by-section">
+        <label>Group by:</label>
+        <a href="#" onclick="setGroupBy('category')" class="active" id="group-category">Category</a>
+        <a href="#" onclick="setGroupBy('status')" id="group-status">Status</a>
+      </div>
       
       <label>Sort by:</label>
       <a href="#" onclick="setSortBy('name')" class="active" id="sort-name">Name ↑</a>
@@ -168,7 +172,7 @@
     let mappings = {};
     let channels = [];
     let currentView = 'flat';
-    let currentGroupBy = 'none';
+    let currentGroupBy = 'category';
     let currentSort = 'name';
     let currentFilter = 'all';
     let sortOrder = { name: 'asc', date: 'desc', channel: 'asc' }; // Track sort direction
@@ -264,7 +268,7 @@
         return sortOrder[currentSort] === 'desc' ? -result : result;
       });
 
-      if (currentView === 'grouped' && currentGroupBy !== 'none') {
+      if (currentView === 'grouped') {
         renderGroupedView(filteredFeeds);
       } else {
         renderFlatView(filteredFeeds);
@@ -343,12 +347,15 @@
       Object.entries(groupedFeeds).forEach(([groupName, groupFeeds]) => {
         const groupId = `group-${groupName.replace(/\s+/g, '-').toLowerCase()}`;
         
+        // Don't convert to uppercase - keep original case
+        const displayName = groupName.charAt(0).toUpperCase() + groupName.slice(1).toLowerCase();
+        
         html += `
           <div class="group-section">
             <div class="group-header" onclick="toggleGroup('${groupId}')">
               <div>
                 <span class="group-arrow">▼</span>
-                📁 ${groupName.toUpperCase()}
+                📁 ${displayName}
               </div>
               <span class="group-count">${groupFeeds.length}</span>
             </div>
@@ -470,19 +477,22 @@
       currentView = view;
       document.getElementById('flat-link').classList.toggle('active', view === 'flat');
       document.getElementById('grouped-link').classList.toggle('active', view === 'grouped');
+      
+      // Show/hide group by section
+      const groupBySection = document.getElementById('group-by-section');
+      if (view === 'grouped') {
+        groupBySection.classList.add('show');
+      } else {
+        groupBySection.classList.remove('show');
+      }
+      
       renderFeeds();
     }
 
     function setGroupBy(groupBy) {
       currentGroupBy = groupBy;
-      document.getElementById('group-none').classList.toggle('active', groupBy === 'none');
       document.getElementById('group-category').classList.toggle('active', groupBy === 'category');
       document.getElementById('group-status').classList.toggle('active', groupBy === 'status');
-      
-      // Auto-switch to grouped view if grouping is enabled
-      if (groupBy !== 'none' && currentView === 'flat') {
-        setView('grouped');
-      }
       
       renderFeeds();
     }
