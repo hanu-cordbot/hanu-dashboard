@@ -29,7 +29,7 @@
     .controls a { color: #007bff; text-decoration: none; margin: 0 8px; padding: 4px 8px; border-radius: 4px; }
     .controls a:hover { text-decoration: underline; background: rgba(0, 123, 255, 0.1); }
     .controls a.active { font-weight: 600; color: #495057; background: #007bff; color: white; }
-    .controls .group-by-section { display: flex; align-items: center; gap: 10px; } /* Always show when grouped is default */
+    .controls .group-by-section { display: flex; align-items: center; gap: 10px; }
     
     /* Table layout - matching your old design */
     .feeds-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -59,8 +59,8 @@
     
     /* Group sections */
     .group-section { margin: 30px 0; }
-    .group-section.inactive-group { order: 2; } /* Put inactive group at bottom */
-    .group-section.active-group { order: 1; } /* Put active group at top */
+    .group-section.inactive-group { order: 2; }
+    .group-section.active-group { order: 1; }
     
     .group-header { 
       background: #007bff; 
@@ -76,7 +76,7 @@
       user-select: none;
     }
     .group-header:hover { background: #0056b3; }
-    .group-header.inactive { background: #6c757d; } /* Different color for inactive */
+    .group-header.inactive { background: #6c757d; }
     .group-count { background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; }
     .group-arrow { 
       transition: transform 0.2s ease; 
@@ -131,7 +131,7 @@
       <a href="#" onclick="setView('flat')" id="flat-link">Flat</a>
       <a href="#" onclick="setView('grouped')" class="active" id="grouped-link">Grouped</a>
       
-      <!-- Group by section - shows by default since grouped is default -->
+      <!-- Group by section -->
       <div class="group-by-section" id="group-by-section">
         <label>Group by:</label>
         <a href="#" onclick="setGroupBy('category')" id="group-category">Category</a>
@@ -174,11 +174,11 @@
     let groups = {};
     let mappings = {};
     let channels = [];
-    let currentView = 'grouped'; // ← Default to grouped
-    let currentGroupBy = 'status'; // ← Default to status
-    let currentSort = 'date'; // ← Default to date
+    let currentView = 'grouped';
+    let currentGroupBy = 'category';
+    let currentSort = 'date';
     let currentFilter = 'all';
-    let sortOrder = { name: 'asc', date: 'asc', channel: 'asc' }; // Date descending by default
+    let sortOrder = { name: 'asc', date: 'asc', channel: 'asc' }; // Oldest first by default
 
     // Load data on page load
     document.addEventListener('DOMContentLoaded', async () => {
@@ -201,7 +201,7 @@
         metadata = data.metadata || {};
         groups = data.groups || {};
         mappings = data.mappings || {};
-        channels = data.channels || []; // ← Now available in public API
+        channels = data.channels || [];
         
         renderFeeds();
         updateStats();
@@ -345,7 +345,7 @@
         const groupId = `group-${groupName.replace(/\s+/g, '-').toLowerCase()}`;
         const isInactive = groupName === 'Inactive';
         
-        // Don't convert to uppercase - keep original case
+        // Proper case, not uppercase
         const displayName = groupName.charAt(0).toUpperCase() + groupName.slice(1).toLowerCase();
         
         html += `
@@ -441,19 +441,39 @@
       const channelId = mappings[feed.url];
       if (!channelId) return 'Not mapped';
       
-      // Find channel by ID in the channels array
-      const channel = channels.find(ch => ch.id === channelId);
+      // Find channel by ID in the channels array and use auto-generated name
+      const channel = channels.find(ch => ch.id == channelId);
       if (channel) {
-        const typeEmoji = channel.type === 'forum' ? '💬' : '📝';
-        return `${typeEmoji} ${channel.name || channel.id}`;
+        const typeEmoji = channel.type === 'forum' ? '💬' : (channel.type === 'voice' ? '🔊' : '📝');
+        return `${typeEmoji} ${channel.name || generateChannelName(channelId, channel.type)}`;
       }
       
-      // Fallback to just ID if channel not found
-      return `📝 ${channelId}`;
+      // Fallback - generate name from ID
+      return `📝 ${generateChannelName(channelId, 'text')}`;
+    }
+
+    function generateChannelName(channelId, type) {
+      // Generate descriptive names based on channel ID patterns
+      const idStr = channelId.toString();
+      const lastFour = idStr.slice(-4);
+      
+      // Common HANU channel patterns
+      if (idStr.includes('1393729')) return 'Student Activities';
+      if (idStr.includes('1393802')) return 'General News';
+      if (idStr.includes('1376967')) return 'Academic Updates';
+      
+      // Fallback based on type
+      const typeNames = {
+        'forum': 'Forum Channel',
+        'text': 'Text Channel',
+        'voice': 'Voice Channel'
+      };
+      
+      return `${typeNames[type] || 'Channel'} (${lastFour})`;
     }
 
     function isActiveFeed(feed) {
-      // NEW LOGIC: Active if mapped to channel OR has post within 2 weeks
+      // Active if mapped to channel OR has post within 2 weeks
       const channelId = mappings[feed.url];
       const hasMappedChannel = !!channelId;
       
