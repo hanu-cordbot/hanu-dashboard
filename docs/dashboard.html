@@ -17,13 +17,11 @@
       <a href="stats.html">📊 Statistics</a>
     </div>
 
-
     <!-- Header -->
     <div class="header">
       <h1>🤖 Feed Management Dashboard</h1>
       <p>Manage RSS feeds and Discord channel mappings for HANU University</p>
     </div>
-
 
     <!-- Authentication -->
     <div class="auth-section" id="auth-section">
@@ -32,7 +30,6 @@
       <button id="login-button">Login</button>
       <div id="auth-status" style="margin-top: 10px;"></div>
     </div>
-
 
     <!-- Main Content -->
     <div id="main-content" class="hidden">
@@ -52,6 +49,25 @@
         </div>
       </div>
 
+      <!-- Real-time System Stats -->
+      <div class="status-grid" id="realtime-stats" style="margin-top: 20px; background: #f8f9fa; border-radius: 8px; padding: 15px;">
+        <div class="status-card">
+          <strong>💾 Memory Usage</strong>
+          <div class="status-value" id="memory-usage">--</div>
+        </div>
+        <div class="status-card">
+          <strong>⚡ CPU Usage</strong>
+          <div class="status-value" id="cpu-usage">--</div>
+        </div>
+        <div class="status-card">
+          <strong>📈 Activity Rate</strong>
+          <div class="status-value" id="activity-rate">--</div>
+        </div>
+        <div class="status-card">
+          <strong>🎯 Health Score</strong>
+          <div class="status-value" id="health-score">--</div>
+        </div>
+      </div>
 
       <!-- Quick Add Forms -->
       <div class="form-row">
@@ -65,7 +81,6 @@
         </div>
       </div>
 
-
       <!-- View Controls -->
       <div class="controls">
         <label>View:</label>
@@ -73,7 +88,6 @@
           <button class="btn btn-outline active" onclick="setView('flat')" id="view-flat">📄 Flat</button>
           <button class="btn btn-outline" onclick="setView('grouped')" id="view-grouped">📁 Grouped</button>
         </div>
-
 
         <label>Sort:</label>
         <div class="btn-group">
@@ -83,7 +97,6 @@
           <button class="btn btn-outline" onclick="setSort('group')" id="sort-group">Group</button>
         </div>
 
-
         <label>Filter:</label>
         <div class="btn-group">
           <button class="btn btn-outline active" onclick="setFilter('all')" id="filter-all">All</button>
@@ -91,7 +104,6 @@
           <button class="btn btn-outline" onclick="setFilter('inactive')" id="filter-inactive">Inactive</button>
         </div>
       </div>
-
 
       <!-- Feeds Section -->
       <div class="section">
@@ -101,20 +113,21 @@
         </div>
       </div>
 
-
       <!-- Channels Section -->
       <div class="section">
         <h2>💬 Discord Channels</h2>
         <div class="form-group mb-15">
           <input type="text" id="new-channel-id" placeholder="Discord Channel ID">
           <button onclick="addChannel()" class="btn btn-primary">➕ Add Channel</button>
+          <small style="display: block; margin-top: 5px; color: #6c757d;">
+            💡 Real channel names will be fetched automatically when the bot runs
+          </small>
         </div>
         
         <div id="channels-list">
           <div class="loading">Loading channels...</div>
         </div>
       </div>
-
 
       <!-- Bot Controls -->
       <div class="section">
@@ -131,12 +144,10 @@
     </div>
   </div>
 
-
   <!-- Scripts -->
   <script type="module">
     import HanuAuth from './shared/auth.js';
     import HanuAPI from './shared/api.js';
-
 
     // Dashboard state
     let feeds = [];
@@ -147,7 +158,7 @@
     let currentSort = 'name';
     let currentFilter = 'all';
     let feedMetadata = {};
-
+    let statsInterval = null;
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
@@ -157,6 +168,7 @@
       // Setup authentication callback
       HanuAuth.onLogin(async () => {
         await loadAllData();
+        startStatsUpdates();
       });
       
       // Parse emojis
@@ -169,10 +181,46 @@
           document.getElementById('auth-section').classList.add('hidden');
           document.getElementById('main-content').classList.remove('hidden');
           await loadAllData();
+          startStatsUpdates();
         }
       }
     });
 
+    // Start real-time stats updates
+    function startStatsUpdates() {
+      if (statsInterval) clearInterval(statsInterval);
+      
+      // Update immediately
+      updateRealTimeStats();
+      
+      // Then update every 30 seconds
+      statsInterval = setInterval(updateRealTimeStats, 30000);
+    }
+
+    // Update real-time statistics
+    async function updateRealTimeStats() {
+      try {
+        const stats = await HanuAPI.getSystemStats();
+        
+        document.getElementById('memory-usage').textContent = `${stats.memory || 0} KB`;
+        document.getElementById('cpu-usage').textContent = `${stats.cpu || 0}%`;
+        document.getElementById('activity-rate').textContent = `${stats.activityRate || 0}%`;
+        document.getElementById('health-score').textContent = `${stats.healthScore || 0}/100`;
+        
+        // Update basic status cards too
+        document.getElementById('feed-count').textContent = `${stats.activeFeedCount || 0}/${stats.feedCount || 0}`;
+        
+        console.log('📊 Stats updated:', stats);
+        
+      } catch (error) {
+        console.error('Failed to update real-time stats:', error);
+        // Show placeholder values on error
+        document.getElementById('memory-usage').textContent = 'Error';
+        document.getElementById('cpu-usage').textContent = 'Error';
+        document.getElementById('activity-rate').textContent = 'Error';
+        document.getElementById('health-score').textContent = 'Error';
+      }
+    }
 
     // Load all dashboard data
     async function loadAllData() {
@@ -183,18 +231,15 @@
           HanuAPI.getSystemStatus()
         ]);
 
-
         feeds = feedsData.feeds || [];
         channels = channelsData.channels || [];
         groups = feedsData.groups || {};
         feedMappings = feedsData.mappings || {};
         feedMetadata = feedsData.metadata || {};
 
-
         updateStatusCards(statusData);
         renderFeeds();
         renderChannels();
-
 
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
@@ -202,14 +247,11 @@
       }
     }
 
-
     // Update status cards
     function updateStatusCards(statusData) {
       document.getElementById('bot-status').textContent = statusData.workerStatus || 'Unknown';
-      document.getElementById('feed-count').textContent = feeds.length;
       document.getElementById('seen-count').textContent = statusData.seenCount || 0;
     }
-
 
     // Render feeds based on current view/sort/filter
     function renderFeeds() {
@@ -220,7 +262,6 @@
         return;
       }
 
-
       // Apply filters
       let filteredFeeds = feeds.filter(feed => {
         if (currentFilter === 'all') return true;
@@ -228,7 +269,6 @@
         if (currentFilter === 'inactive') return !isActiveFeed(feed);
         return true;
       });
-
 
       // Apply sorting
       filteredFeeds.sort((a, b) => {
@@ -246,7 +286,6 @@
         }
       });
 
-
       if (currentView === 'grouped') {
         renderGroupedFeeds(filteredFeeds);
       } else {
@@ -255,7 +294,6 @@
       
       twemoji.parse(container, { folder: 'svg', ext: '.svg' });
     }
-
 
     // Render flat feed list
     function renderFlatFeeds(feedList) {
@@ -276,7 +314,6 @@
           <tbody>
       `;
 
-
       feedList.forEach(feed => {
         const title = getTitle(feed);
         const lastPost = formatDate(getLastPost(feed));
@@ -284,7 +321,6 @@
         const groupName = getGroup(feed) || 'None';
         const pageUrl = getPageUrl(feed);
         const isActive = isActiveFeed(feed);
-
 
         html += `
           <tr class="${isActive ? '' : 'text-muted'}">
@@ -299,9 +335,10 @@
             <td>
               <select onchange="updateFeedChannel('${feed.url}', this.value)" style="font-size: 12px;">
                 <option value="">No Channel</option>
-                ${channels.map(ch => 
-                  `<option value="${ch.id}" ${feedMappings[feed.url] == ch.id ? 'selected' : ''}>${ch.name || ch.id}</option>`
-                ).join('')}
+                ${channels.map(ch => {
+                  const displayName = getChannelDisplayName(ch);
+                  return `<option value="${ch.id}" ${feedMappings[feed.url] == ch.id ? 'selected' : ''}>${displayName}</option>`;
+                }).join('')}
               </select>
             </td>
             <td>
@@ -322,11 +359,9 @@
         `;
       });
 
-
       html += '</tbody></table>';
       container.innerHTML = html;
     }
-
 
     // Render grouped feed list
     function renderGroupedFeeds(feedList) {
@@ -339,7 +374,6 @@
         if (!groupedFeeds[group]) groupedFeeds[group] = [];
         groupedFeeds[group].push(feed);
       });
-
 
       let html = '';
       Object.entries(groupedFeeds).forEach(([groupName, groupFeeds]) => {
@@ -380,10 +414,8 @@
         `;
       });
 
-
       container.innerHTML = html;
     }
-
 
     // Render channels list
     function renderChannels() {
@@ -394,47 +426,44 @@
         return;
       }
 
-
       let html = '';
       channels.forEach(channel => {
         const feedCount = Object.values(feedMappings).filter(id => id == channel.id).length;
-        const emoji = channel.type === 'forum' ? '💬' : (channel.type === 'voice' ? '🔊' : '📝');
+        const isPlaceholder = channel.placeholder || channel.name?.startsWith('Channel-');
+        const displayName = getChannelDisplayName(channel);
         
         html += `
           <div class="card mb-10">
             <div class="flex-between">
               <div>
-                <strong>${emoji} ${channel.name || `Channel-${channel.id.toString().slice(-4)}`}</strong>
+                <strong>${displayName}</strong>
+                ${isPlaceholder ? '<span class="badge bg-warning">📋 Placeholder</span>' : '<span class="badge bg-success">✅ Real Name</span>'}
                 <span class="badge bg-secondary">${channel.type || 'text'}</span>
                 <small class="text-muted">ID: ${channel.id}</small>
                 <span class="badge bg-info">${feedCount} feeds</span>
               </div>
               <button onclick="removeChannel('${channel.id}')" class="btn btn-danger">🗑️ Remove</button>
             </div>
+            ${isPlaceholder ? '<small class="text-muted" style="margin-left: 15px;">💡 Real name will be fetched when bot runs</small>' : ''}
           </div>
         `;
       });
 
-
       container.innerHTML = html;
     }
-
 
     // Helper functions
     function getTitle(feed) {
       return feedMetadata[feed.url]?.title || feed.title || 'Unknown Feed';
     }
 
-
     function getLastPost(feed) {
       return feedMetadata[feed.url]?.last_post || feed.lastPost || null;
     }
 
-
     function getPageUrl(feed) {
       return feedMetadata[feed.url]?.page_url || feed.pageUrl || feed.url;
     }
-
 
     function getGroup(feed) {
       for (const [groupName, feedList] of Object.entries(groups)) {
@@ -445,22 +474,29 @@
       return null;
     }
 
-
     function getChannelName(feed) {
       const channelId = feedMappings[feed.url];
       if (!channelId) return 'None';
       const channel = channels.find(ch => ch.id == channelId);
-      return channel ? (channel.name || `Channel-${channelId.toString().slice(-4)}`) : 'Unknown';
+      return channel ? getChannelDisplayName(channel) : 'Unknown';
     }
 
+    function getChannelDisplayName(channel) {
+      const emoji = channel.type === 'forum' ? '💬' : (channel.type === 'voice' ? '🔊' : '📝');
+      const name = channel.name || `Channel-${channel.id.toString().slice(-4)}`;
+      return `${emoji} ${name}`;
+    }
 
     function isActiveFeed(feed) {
+      // Enhanced activity detection: mapped to channel OR has post within 14 days
+      const channelId = feedMappings[feed.url];
+      const hasMappedChannel = !!channelId;
+      
       const lastPost = getLastPost(feed);
-      if (!lastPost) return false;
-      const daysSince = (Date.now() - new Date(lastPost)) / (1000 * 60 * 60 * 24);
-      return daysSince <= 7;
+      const hasRecentPost = lastPost && (Date.now() - new Date(lastPost)) <= (14 * 24 * 60 * 60 * 1000); // 14 days
+      
+      return hasMappedChannel || hasRecentPost;
     }
-
 
     function formatDate(dateStr) {
       if (!dateStr) return 'Never';
@@ -476,7 +512,6 @@
       }
     }
 
-
     // View/Sort/Filter controls
     window.setView = function(view) {
       currentView = view;
@@ -484,7 +519,6 @@
       document.getElementById('view-grouped').classList.toggle('active', view === 'grouped');
       renderFeeds();
     };
-
 
     window.setSort = function(sort) {
       currentSort = sort;
@@ -495,7 +529,6 @@
       renderFeeds();
     };
 
-
     window.setFilter = function(filter) {
       currentFilter = filter;
       document.querySelectorAll('[id^="filter-"]').forEach(btn => {
@@ -504,7 +537,6 @@
       document.getElementById(`filter-${filter}`).classList.add('active');
       renderFeeds();
     };
-
 
     // Feed management
     window.addFeed = async function() {
@@ -516,7 +548,6 @@
         return;
       }
 
-
       try {
         await HanuAPI.addFeed(url);
         input.value = '';
@@ -527,10 +558,8 @@
       }
     };
 
-
     window.removeFeed = async function(feedUrl) {
       if (!confirm('Are you sure you want to remove this feed?')) return;
-
 
       try {
         await HanuAPI.removeFeed(feedUrl);
@@ -540,7 +569,6 @@
         showAlert('Failed to remove feed: ' + error.message, 'danger');
       }
     };
-
 
     window.updateFeedChannel = async function(feedUrl, channelId) {
       try {
@@ -552,7 +580,6 @@
       }
     };
 
-
     window.updateFeedGroup = async function(feedUrl, groupName) {
       try {
         await HanuAPI.updateFeedGroup(feedUrl, groupName);
@@ -562,7 +589,6 @@
         showAlert('Failed to update group: ' + error.message, 'danger');
       }
     };
-
 
     // Group management
     window.addGroup = async function() {
@@ -574,7 +600,6 @@
         return;
       }
 
-
       try {
         await HanuAPI.addGroup(name);
         input.value = '';
@@ -585,10 +610,8 @@
       }
     };
 
-
     window.removeGroup = async function(groupName) {
       if (!confirm(`Remove group "${groupName}"? Feeds will become ungrouped.`)) return;
-
 
       try {
         await HanuAPI.removeGroup(groupName);
@@ -599,7 +622,6 @@
       }
     };
 
-
     window.toggleGroup = function(groupName) {
       const groupElement = document.getElementById(`group-${groupName}`);
       if (groupElement) {
@@ -607,11 +629,9 @@
       }
     };
 
-
     // Channel management
     window.addChannel = async function() {
       const idInput = document.getElementById('new-channel-id');
-      
       const channelId = idInput.value.trim();
       
       if (!channelId) {
@@ -619,22 +639,25 @@
         return;
       }
 
+      // Validate Discord channel ID format
+      if (!/^\d{17,20}$/.test(channelId)) {
+        showAlert('Invalid Discord channel ID format. Should be 17-20 digits.', 'warning');
+        return;
+      }
 
       try {
         await HanuAPI.addChannel(channelId);
         idInput.value = '';
         await loadAllData();
-        showAlert('Channel added successfully! Real name will be fetched on next bot run. 💬', 'success');
+        showAlert('Channel added! Real name will be fetched when bot runs. 💬', 'success');
       } catch (error) {
         showAlert('Failed to add channel: ' + error.message, 'danger');
       }
     };
 
-
     window.removeChannel = async function(channelId) {
       const feedCount = Object.values(feedMappings).filter(id => id == channelId).length;
       if (feedCount > 0 && !confirm(`This channel has ${feedCount} mapped feeds. Remove anyway?`)) return;
-
 
       try {
         await HanuAPI.removeChannel(channelId);
@@ -645,7 +668,6 @@
       }
     };
 
-
     // Bot controls
     window.runBot = async function() {
       const button = document.getElementById('run-bot-btn');
@@ -654,16 +676,16 @@
       button.disabled = true;
       button.innerHTML = '<span class="loading-spinner"></span> Running...';
       output.classList.remove('hidden');
-      output.textContent = '⏳ Starting bot job...';
-
+      output.textContent = '⏳ Starting bot job...\n💡 This will also sync real Discord channel names!';
 
       try {
         const result = await HanuAPI.runBot();
         output.textContent = `✅ Bot job completed!\n\n${result}`;
         
-        // Refresh data after successful run
+        // Refresh data after successful run to show updated channel names
         setTimeout(async () => {
           await loadAllData();
+          showAlert('📱 Channel names have been synced from Discord!', 'info');
         }, 2000);
         
       } catch (error) {
@@ -674,7 +696,6 @@
       }
     };
 
-
     window.clearCache = async function() {
       try {
         await HanuAPI.clearCache();
@@ -684,16 +705,15 @@
       }
     };
 
-
     window.refreshData = async function() {
       try {
         await loadAllData();
+        await updateRealTimeStats();
         showAlert('Data refreshed successfully! 🔄', 'success');
       } catch (error) {
         showAlert('Failed to refresh data: ' + error.message, 'danger');
       }
     };
-
 
     window.exportData = function() {
       const data = {
@@ -704,7 +724,6 @@
         feedMetadata,
         exportedAt: new Date().toISOString()
       };
-
 
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -718,7 +737,6 @@
       
       showAlert('Data exported successfully! 📥', 'success');
     };
-
 
     // Alert helper
     function showAlert(message, type = 'info') {
@@ -737,6 +755,11 @@
         alertDiv.remove();
       }, 5000);
     }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (statsInterval) clearInterval(statsInterval);
+    });
   </script>
 </body>
 </html>

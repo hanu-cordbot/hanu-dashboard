@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>HANU Feed Monitor</title>
+  <title>HANU-cordbot Feed Tracker</title>
   <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
   <style>
     /* Discord emoji styling */
@@ -16,6 +16,8 @@
     .header { margin-bottom: 30px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef; }
     .header h1 { margin: 0; font-size: 1.8rem; color: #495057; font-weight: 600; }
     .header p { margin: 5px 0 0 0; color: #6c757d; font-size: 0.95rem; }
+    .header a { color: #007bff; text-decoration: none; }
+    .header a:hover { text-decoration: underline; }
     
     /* Stats bar - minimal */
     .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 6px; }
@@ -88,6 +90,13 @@
     .group-content.collapsed { max-height: 0; }
     .group-content:not(.collapsed) { max-height: 2000px; }
     
+    /* Footer */
+    .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #e9ecef; text-align: center; color: #6c757d; font-size: 0.9rem; }
+    .footer a { color: #007bff; text-decoration: none; margin: 0 10px; }
+    .footer a:hover { text-decoration: underline; }
+    .footer .support-btn { background: #28a745; color: white; padding: 8px 16px; border-radius: 4px; display: inline-block; margin-top: 10px; }
+    .footer .support-btn:hover { background: #218838; text-decoration: none; }
+    
     /* Responsive */
     @media (max-width: 768px) { 
       .stats { grid-template-columns: repeat(2, 1fr); } 
@@ -101,8 +110,8 @@
   <div class="container">
     <!-- Simple header -->
     <div class="header">
-      <h1>📋 HANU Feed Monitor</h1>
-      <p>Real-time status monitoring for Hanoi University RSS feeds</p>
+      <h1>📋 HANU-cordbot Feed Tracker</h1>
+      <p>~a tracker for all posts scanned by <a href="https://discord.gg/pA8nwFS6" target="_blank">hanu-cordbot</a></p>
     </div>
 
     <!-- Stats -->
@@ -164,6 +173,16 @@
       <!-- Content will be inserted here -->
     </div>
 
+    <!-- Footer -->
+    <div class="footer">
+      <div>
+        <a href="https://github.com/hanu-cordbot" target="_blank">🔗 GitHub Project</a>
+        <span>•</span>
+        <span>made with ❤️ by namesn_pe</span>
+      </div>
+      <a href="https://example.com/support" target="_blank" class="support-btn">💬 Support</a>
+    </div>
+
     <!-- Admin link -->
     <a href="dashboard.html" class="admin-link">🔧 Admin</a>
   </div>
@@ -175,10 +194,10 @@
     let mappings = {};
     let channels = [];
     let currentView = 'grouped';
-    let currentGroupBy = 'category';
+    let currentGroupBy = 'status';
     let currentSort = 'date';
     let currentFilter = 'all';
-    let sortOrder = { name: 'asc', date: 'asc', channel: 'asc' }; // Oldest first by default
+    let sortOrder = { name: 'asc', date: 'desc', channel: 'asc' }; // Newest first by default
 
     // Load data on page load
     document.addEventListener('DOMContentLoaded', async () => {
@@ -441,44 +460,24 @@
       const channelId = mappings[feed.url];
       if (!channelId) return 'Not mapped';
       
-      // Find channel by ID in the channels array and use auto-generated name
+      // Find channel by ID in the channels array and use real Discord name
       const channel = channels.find(ch => ch.id == channelId);
       if (channel) {
         const typeEmoji = channel.type === 'forum' ? '💬' : (channel.type === 'voice' ? '🔊' : '📝');
-        return `${typeEmoji} ${channel.name || generateChannelName(channelId, channel.type)}`;
+        return `${typeEmoji} ${channel.name || `Channel-${channelId.toString().slice(-4)}`}`;
       }
       
       // Fallback - generate name from ID
-      return `📝 ${generateChannelName(channelId, 'text')}`;
-    }
-
-    function generateChannelName(channelId, type) {
-      // Generate descriptive names based on channel ID patterns
-      const idStr = channelId.toString();
-      const lastFour = idStr.slice(-4);
-      
-      // Common HANU channel patterns
-      if (idStr.includes('1393729')) return 'Student Activities';
-      if (idStr.includes('1393802')) return 'General News';
-      if (idStr.includes('1376967')) return 'Academic Updates';
-      
-      // Fallback based on type
-      const typeNames = {
-        'forum': 'Forum Channel',
-        'text': 'Text Channel',
-        'voice': 'Voice Channel'
-      };
-      
-      return `${typeNames[type] || 'Channel'} (${lastFour})`;
+      return `📝 Channel-${channelId.toString().slice(-4)}`;
     }
 
     function isActiveFeed(feed) {
-      // Active if mapped to channel OR has post within 2 weeks
+      // Enhanced activity detection: mapped to channel OR has post within 14 days
       const channelId = mappings[feed.url];
       const hasMappedChannel = !!channelId;
       
       const lastPost = getLastPost(feed);
-      const hasRecentPost = lastPost && (Date.now() - new Date(lastPost)) <= (14 * 24 * 60 * 60 * 1000); // 2 weeks
+      const hasRecentPost = lastPost && (Date.now() - new Date(lastPost)) <= (14 * 24 * 60 * 60 * 1000); // 14 days
       
       return hasMappedChannel || hasRecentPost;
     }
