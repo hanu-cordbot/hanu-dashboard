@@ -680,7 +680,11 @@
 
       try {
         const result = await HanuAPI.runBot();
-        output.textContent = `✅ Bot job completed!\n\n${result}`;
+        const resultText = typeof result === 'object' ? 
+          `Status: ${result.success ? 'Success' : 'Failed'}\nMessage: ${result.result || result.error || 'No details'}` : 
+          result;
+        output.textContent = `✅ Bot job completed!\n\n${resultText}`;
+
         
         // Refresh data after successful run to show updated channel names
         setTimeout(async () => {
