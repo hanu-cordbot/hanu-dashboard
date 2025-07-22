@@ -16,7 +16,7 @@ class HanuAuth {
   saveToken(token) {
     this.token = token;
     sessionStorage.setItem('HANU_AUTH_TOKEN', token);
-    localStorage.setItem('HANU_AUTH_TOKEN', token); // Backup in localStorage
+    localStorage.setItem('HANU_AUTH_TOKEN', token);
   }
   
   // Load token from storage

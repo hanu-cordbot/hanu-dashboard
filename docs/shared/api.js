@@ -78,6 +78,10 @@ class HanuAPI {
     return this.get('/api/status');
   }
   
+  async getDiagnostics() {
+    return this.get('/api/diagnostics');
+  }
+  
   // Feed Management
   async getFeeds() {
     return this.get('/api/feeds');
@@ -88,7 +92,7 @@ class HanuAPI {
   }
   
   async removeFeed(feedUrl) {
-    return this.delete(`/api/feeds?url=${encodeURIComponent(feedUrl)}`);
+    return this.delete('/api/feeds', { feedUrl });
   }
   
   async updateFeedMapping(feedUrl, channelId) {
@@ -109,24 +113,7 @@ class HanuAPI {
   }
   
   async removeChannel(channelId) {
-    return this.delete(`/api/channels?id=${channelId}`);
-  }
-  
-  // Group Management
-  async getGroups() {
-    return this.get('/api/groups');
-  }
-  
-  async addGroup(groupName) {
-    return this.post('/api/groups', { groupName });
-  }
-  
-  async removeGroup(groupName) {
-    return this.delete(`/api/groups?name=${encodeURIComponent(groupName)}`);
-  }
-  
-  async renameGroup(oldName, newName) {
-    return this.put('/api/groups', { oldName, newName });
+    return this.delete('/api/channels', { channelId });
   }
   
   // System Prompts
@@ -147,21 +134,17 @@ class HanuAPI {
     return this.get('/api/stats');
   }
   
-  async getFeedPerformance() {
-    return this.get('/api/stats/feeds');
-  }
-  
-  async getChannelStats() {
-    return this.get('/api/stats/channels');
-  }
-  
   // Bot Controls
   async runBot() {
     return this.post('/run');
   }
   
   async clearCache() {
-    return this.post('/api/cache/clear');
+    return this.delete('/api/cache');
+  }
+  
+  async resetSeenData() {
+    return this.post('/api/reset-seen');
   }
   
   // Public endpoints (no auth required)
