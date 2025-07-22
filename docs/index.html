@@ -24,11 +24,11 @@
     .stat-label { font-size: 0.85rem; color: #6c757d; margin-top: 4px; }
     
     /* Simple controls */
-    .controls { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 6px; }
-    .controls label { font-weight: 500; margin-right: 15px; }
-    .controls a { color: #007bff; text-decoration: none; margin: 0 8px; }
-    .controls a:hover { text-decoration: underline; }
-    .controls a.active { font-weight: 600; color: #495057; }
+    .controls { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 6px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
+    .controls label { font-weight: 500; margin-right: 10px; }
+    .controls a { color: #007bff; text-decoration: none; margin: 0 8px; padding: 4px 8px; border-radius: 4px; }
+    .controls a:hover { text-decoration: underline; background: rgba(0, 123, 255, 0.1); }
+    .controls a.active { font-weight: 600; color: #495057; background: #007bff; color: white; }
     
     /* Table layout - matching your old design */
     .feeds-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -56,11 +56,39 @@
     .loading, .error { text-align: center; padding: 40px; color: #6c757d; }
     .error { color: #dc3545; }
     
+    /* Group sections */
+    .group-section { margin: 30px 0; }
+    .group-header { 
+      background: #007bff; 
+      color: white; 
+      padding: 10px 15px; 
+      border-radius: 6px; 
+      margin-bottom: 10px; 
+      font-weight: 600; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .group-header:hover { background: #0056b3; }
+    .group-count { background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; }
+    .group-arrow { 
+      transition: transform 0.2s ease; 
+      font-size: 0.8rem;
+      margin-right: 8px;
+    }
+    .group-header.collapsed .group-arrow { transform: rotate(-90deg); }
+    .group-content { overflow: hidden; transition: max-height 0.3s ease; }
+    .group-content.collapsed { max-height: 0; }
+    .group-content:not(.collapsed) { max-height: 2000px; }
+    
     /* Responsive */
     @media (max-width: 768px) { 
       .stats { grid-template-columns: repeat(2, 1fr); } 
       .feeds-table { font-size: 0.9rem; }
       .feeds-table th, .feeds-table td { padding: 8px; }
+      .controls { flex-direction: column; align-items: stretch; }
     }
   </style>
 </head>
@@ -95,19 +123,23 @@
     <!-- Controls (matching your old design) -->
     <div class="controls">
       <label>View:</label>
-      <a href="#" onclick="setView('flat')" class="active" id="flat-link">Flat</a> |
+      <a href="#" onclick="setView('flat')" class="active" id="flat-link">Flat</a>
       <a href="#" onclick="setView('grouped')" id="grouped-link">Grouped</a>
       
-      <label style="margin-left: 30px;">Group by:</label>
-      <a href="#" onclick="setGroup('none')" class="active" id="group-none">None</a> |
-      <a href="#" onclick="setGroup('category')" id="group-category">Category</a> |
-      <a href="#" onclick="setGroup('channel')" id="group-channel">Channel</a>
+      <label>Group by:</label>
+      <a href="#" onclick="setGroupBy('none')" class="active" id="group-none">None</a>
+      <a href="#" onclick="setGroupBy('category')" id="group-category">Category</a>
+      <a href="#" onclick="setGroupBy('status')" id="group-status">Status</a>
       
-      <label style="margin-left: 30px;">Sort by:</label>
-      <a href="#" onclick="setSort('name')" class="active" id="sort-name">Name</a> |
-      <a href="#" onclick="setSort('url')" id="sort-url">URL</a> |
-      <a href="#" onclick="setSort('newest')" id="sort-newest">Newest</a> |
-      <a href="#" onclick="setSort('oldest')" id="sort-oldest">Oldest</a>
+      <label>Sort by:</label>
+      <a href="#" onclick="setSortBy('name')" class="active" id="sort-name">Name ↑</a>
+      <a href="#" onclick="setSortBy('date')" id="sort-date">Date</a>
+      <a href="#" onclick="setSortBy('channel')" id="sort-channel">Channel</a>
+      
+      <label>Filter:</label>
+      <a href="#" onclick="setFilter('all')" class="active" id="filter-all">All</a>
+      <a href="#" onclick="setFilter('active')" id="filter-active">Active</a>
+      <a href="#" onclick="setFilter('inactive')" id="filter-inactive">Inactive</a>
     </div>
 
     <!-- Loading state -->
@@ -117,23 +149,13 @@
 
     <!-- Error state -->
     <div id="error-state" class="error" style="display: none;">
-      ⚠️ Unable to load feed data. <button onclick="loadData()">Retry</button>
+      ⚠️ Unable to load feed data. <button onclick="loadData()" style="margin-left: 10px;">Retry</button>
     </div>
 
-    <!-- Feeds table (matching your old design) -->
-    <table class="feeds-table" id="feeds-table" style="display: none;">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Date</th>
-          <th>Channel</th>
-          <th>Page</th>
-        </tr>
-      </thead>
-      <tbody id="feeds-tbody">
-        <!-- Table rows will be inserted here -->
-      </tbody>
-    </table>
+    <!-- Feeds display container -->
+    <div id="feeds-container" style="display: none;">
+      <!-- Content will be inserted here -->
+    </div>
 
     <!-- Admin link -->
     <a href="dashboard.html" class="admin-link">🔧 Admin</a>
@@ -143,17 +165,24 @@
     let feeds = [];
     let metadata = {};
     let groups = {};
+    let mappings = {};
+    let channels = [];
     let currentView = 'flat';
-    let currentGroup = 'none';
+    let currentGroupBy = 'none';
     let currentSort = 'name';
+    let currentFilter = 'all';
+    let sortOrder = { name: 'asc', date: 'desc', channel: 'asc' }; // Track sort direction
 
     // Load data on page load
-    document.addEventListener('DOMContentLoaded', loadData);
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadData();
+      setInterval(loadData, 5 * 60 * 1000); // Auto-refresh every 5 minutes
+    });
 
     async function loadData() {
       document.getElementById('loading-state').style.display = 'block';
       document.getElementById('error-state').style.display = 'none';
-      document.getElementById('feeds-table').style.display = 'none';
+      document.getElementById('feeds-container').style.display = 'none';
 
       try {
         const response = await fetch('https://hanu-cordbot.snacky496.workers.dev/api/public/feeds');
@@ -164,12 +193,19 @@
         feeds = data.feeds || [];
         metadata = data.metadata || {};
         groups = data.groups || {};
+        mappings = data.mappings || {};
         
-        renderTable();
+        // Load channel data for names
+        await loadChannelData();
+        
+        renderFeeds();
         updateStats();
         
         document.getElementById('loading-state').style.display = 'none';
-        document.getElementById('feeds-table').style.display = 'table';
+        document.getElementById('feeds-container').style.display = 'block';
+        
+        // Parse emojis
+        twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
         
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -178,56 +214,194 @@
       }
     }
 
-    function renderTable() {
-      const tbody = document.getElementById('feeds-tbody');
+    async function loadChannelData() {
+      try {
+        // Try to get channel data from admin API (might fail due to auth)
+        const response = await fetch('https://hanu-cordbot.snacky496.workers.dev/api/channels');
+        if (response.ok) {
+          const data = await response.json();
+          channels = data.channels || [];
+        }
+      } catch (error) {
+        console.log('Could not load channel data (auth required)');
+        channels = [];
+      }
+    }
+
+    function renderFeeds() {
+      const container = document.getElementById('feeds-container');
       
       if (feeds.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #6c757d;">No feeds available</td></tr>';
+        container.innerHTML = '<div class="loading">No feeds available</div>';
         return;
       }
 
-      // Sort feeds
-      let sortedFeeds = [...feeds];
-      switch (currentSort) {
-        case 'name':
-          sortedFeeds.sort((a, b) => (metadata[a.url]?.title || a.url).localeCompare(metadata[b.url]?.title || b.url));
-          break;
-        case 'newest':
-          sortedFeeds.sort((a, b) => new Date(metadata[b.url]?.last_post || 0) - new Date(metadata[a.url]?.last_post || 0));
-          break;
-        case 'oldest':
-          sortedFeeds.sort((a, b) => new Date(metadata[a.url]?.last_post || 0) - new Date(metadata[b.url]?.last_post || 0));
-          break;
-      }
+      // Apply filtering
+      let filteredFeeds = feeds.filter(feed => {
+        if (currentFilter === 'all') return true;
+        const isActive = isActiveFeed(feed);
+        if (currentFilter === 'active') return isActive;
+        if (currentFilter === 'inactive') return !isActive;
+        return true;
+      });
 
-      tbody.innerHTML = sortedFeeds.map(feed => {
-        const meta = metadata[feed.url] || {};
-        const title = meta.title || feed.title || 'Unknown Feed';
-        const lastPost = meta.last_post ? formatDate(new Date(meta.last_post)) : 'Never';
-        const pageUrl = meta.page_url || feed.pageUrl || feed.url;
-        const isActive = meta.last_post && (Date.now() - new Date(meta.last_post)) < 7 * 24 * 60 * 60 * 1000;
-        
-        return `
+      // Apply sorting
+      filteredFeeds.sort((a, b) => {
+        let result = 0;
+        switch (currentSort) {
+          case 'name':
+            result = getTitle(a).localeCompare(getTitle(b));
+            break;
+          case 'date':
+            result = new Date(getLastPost(b) || 0) - new Date(getLastPost(a) || 0);
+            break;
+          case 'channel':
+            result = getChannelName(a).localeCompare(getChannelName(b));
+            break;
+          default:
+            return 0;
+        }
+        return sortOrder[currentSort] === 'desc' ? -result : result;
+      });
+
+      if (currentView === 'grouped' && currentGroupBy !== 'none') {
+        renderGroupedView(filteredFeeds);
+      } else {
+        renderFlatView(filteredFeeds);
+      }
+    }
+
+    function renderFlatView(feedList) {
+      const container = document.getElementById('feeds-container');
+      
+      let html = `
+        <table class="feeds-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Status</th>
+              <th>Last Post</th>
+              <th>Channel</th>
+              <th>Page</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      feedList.forEach(feed => {
+        const title = getTitle(feed);
+        const lastPost = formatDate(getLastPost(feed));
+        const pageUrl = getPageUrl(feed);
+        const isActive = isActiveFeed(feed);
+        const channelName = getChannelName(feed);
+
+        html += `
           <tr>
             <td>
               <div class="feed-name">${title}</div>
+              <small style="color: #666;">${getGroupName(feed)}</small>
+            </td>
+            <td>
               <span class="status ${isActive ? 'status-active' : 'status-inactive'}">
                 ${isActive ? '🟢 Active' : '🔴 Inactive'}
               </span>
             </td>
             <td class="feed-date">${lastPost}</td>
-            <td class="feed-channel">Not mapped</td>
-            <td><a href="${pageUrl}" target="_blank" class="feed-link">🔗 Page</a></td>
+            <td class="feed-channel">${channelName}</td>
+            <td><a href="${pageUrl}" target="_blank" class="feed-link">🔗 Visit Page</a></td>
           </tr>
         `;
-      }).join('');
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function renderGroupedView(feedList) {
+      const container = document.getElementById('feeds-container');
+      
+      // Group feeds based on currentGroupBy
+      const groupedFeeds = {};
+      feedList.forEach(feed => {
+        let groupKey;
+        switch (currentGroupBy) {
+          case 'category':
+            groupKey = getGroupName(feed) || 'Other';
+            break;
+          case 'status':
+            groupKey = isActiveFeed(feed) ? 'Active' : 'Inactive';
+            break;
+          default:
+            groupKey = 'All';
+        }
+        
+        if (!groupedFeeds[groupKey]) groupedFeeds[groupKey] = [];
+        groupedFeeds[groupKey].push(feed);
+      });
+
+      let html = '';
+      Object.entries(groupedFeeds).forEach(([groupName, groupFeeds]) => {
+        const groupId = `group-${groupName.replace(/\s+/g, '-').toLowerCase()}`;
+        
+        html += `
+          <div class="group-section">
+            <div class="group-header" onclick="toggleGroup('${groupId}')">
+              <div>
+                <span class="group-arrow">▼</span>
+                📁 ${groupName.toUpperCase()}
+              </div>
+              <span class="group-count">${groupFeeds.length}</span>
+            </div>
+            <div class="group-content" id="${groupId}">
+              <table class="feeds-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Last Post</th>
+                    <th>Channel</th>
+                    <th>Page</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${groupFeeds.map(feed => `
+                    <tr>
+                      <td class="feed-name">${getTitle(feed)}</td>
+                      <td>
+                        <span class="status ${isActiveFeed(feed) ? 'status-active' : 'status-inactive'}">
+                          ${isActiveFeed(feed) ? '🟢 Active' : '🔴 Inactive'}
+                        </span>
+                      </td>
+                      <td class="feed-date">${formatDate(getLastPost(feed))}</td>
+                      <td class="feed-channel">${getChannelName(feed)}</td>
+                      <td><a href="${getPageUrl(feed)}" target="_blank" class="feed-link">🔗 Visit</a></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function toggleGroup(groupId) {
+      const content = document.getElementById(groupId);
+      const header = content.previousElementSibling;
+      
+      if (content.classList.contains('collapsed')) {
+        content.classList.remove('collapsed');
+        header.classList.remove('collapsed');
+      } else {
+        content.classList.add('collapsed');
+        header.classList.add('collapsed');
+      }
     }
 
     function updateStats() {
-      const activeFeeds = feeds.filter(feed => {
-        const meta = metadata[feed.url];
-        return meta?.last_post && (Date.now() - new Date(meta.last_post)) < 7 * 24 * 60 * 60 * 1000;
-      });
+      const activeFeeds = feeds.filter(isActiveFeed);
 
       document.getElementById('active-feeds').textContent = activeFeeds.length;
       document.getElementById('total-feeds').textContent = feeds.length;
@@ -235,7 +409,51 @@
       document.getElementById('system-status').textContent = feeds.length > 0 ? '🟢 Online' : '🔴 Offline';
     }
 
-    function formatDate(date) {
+    // Helper functions
+    function getTitle(feed) {
+      return metadata[feed.url]?.title || feed.title || 'Unknown Feed';
+    }
+
+    function getLastPost(feed) {
+      return metadata[feed.url]?.last_post || feed.lastPost || null;
+    }
+
+    function getPageUrl(feed) {
+      return metadata[feed.url]?.page_url || feed.pageUrl || feed.url;
+    }
+
+    function getGroupName(feed) {
+      for (const [groupName, feedList] of Object.entries(groups)) {
+        if (Array.isArray(feedList) && feedList.includes(feed.url)) {
+          return groupName;
+        }
+      }
+      return 'Other';
+    }
+
+    function getChannelName(feed) {
+      const channelId = mappings[feed.url];
+      if (!channelId) return 'Not mapped';
+      
+      const channel = channels.find(ch => ch.id === channelId);
+      if (channel) {
+        const typeEmoji = channel.type === 'forum' ? '💬' : '📝';
+        return `${typeEmoji} ${channel.name || channel.id}`;
+      }
+      
+      return `📝 ${channelId}`;
+    }
+
+    function isActiveFeed(feed) {
+      const lastPost = getLastPost(feed);
+      if (!lastPost) return false;
+      const daysSince = (Date.now() - new Date(lastPost)) / (1000 * 60 * 60 * 24);
+      return daysSince <= 7;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return 'Never';
+      const date = new Date(dateStr);
       const now = new Date();
       const diffHours = Math.floor((now - date) / (1000 * 60 * 60));
       
@@ -247,35 +465,64 @@
       }
     }
 
-    // Control functions
+    // Control functions with improved sorting
     function setView(view) {
       currentView = view;
       document.getElementById('flat-link').classList.toggle('active', view === 'flat');
       document.getElementById('grouped-link').classList.toggle('active', view === 'grouped');
-      renderTable();
+      renderFeeds();
     }
 
-    function setGroup(group) {
-      currentGroup = group;
-      document.getElementById('group-none').classList.toggle('active', group === 'none');
-      document.getElementById('group-category').classList.toggle('active', group === 'category');
-      document.getElementById('group-channel').classList.toggle('active', group === 'channel');
-      renderTable();
+    function setGroupBy(groupBy) {
+      currentGroupBy = groupBy;
+      document.getElementById('group-none').classList.toggle('active', groupBy === 'none');
+      document.getElementById('group-category').classList.toggle('active', groupBy === 'category');
+      document.getElementById('group-status').classList.toggle('active', groupBy === 'status');
+      
+      // Auto-switch to grouped view if grouping is enabled
+      if (groupBy !== 'none' && currentView === 'flat') {
+        setView('grouped');
+      }
+      
+      renderFeeds();
     }
 
-    function setSort(sort) {
-      currentSort = sort;
+    function setSortBy(sort) {
+      // Toggle sort order if clicking the same sort button
+      if (currentSort === sort) {
+        sortOrder[sort] = sortOrder[sort] === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSort = sort;
+      }
+      
+      // Update button text with arrows
       document.getElementById('sort-name').classList.toggle('active', sort === 'name');
-      document.getElementById('sort-url').classList.toggle('active', sort === 'url');
-      document.getElementById('sort-newest').classList.toggle('active', sort === 'newest');
-      document.getElementById('sort-oldest').classList.toggle('active', sort === 'oldest');
-      renderTable();
+      document.getElementById('sort-date').classList.toggle('active', sort === 'date');
+      document.getElementById('sort-channel').classList.toggle('active', sort === 'channel');
+      
+      // Update arrow indicators
+      const arrow = sortOrder[currentSort] === 'asc' ? ' ↑' : ' ↓';
+      document.getElementById(`sort-${currentSort}`).textContent = 
+        document.getElementById(`sort-${currentSort}`).textContent.split(' ')[0] + arrow;
+      
+      renderFeeds();
     }
 
-    // Parse emojis
-    document.addEventListener('DOMContentLoaded', () => {
-      twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
-    });
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.getElementById('filter-all').classList.toggle('active', filter === 'all');
+      document.getElementById('filter-active').classList.toggle('active', filter === 'active');
+      document.getElementById('filter-inactive').classList.toggle('active', filter === 'inactive');
+      renderFeeds();
+    }
+
+    // Make functions globally available
+    window.setView = setView;
+    window.setGroupBy = setGroupBy;
+    window.setSortBy = setSortBy;
+    window.setFilter = setFilter;
+    window.loadData = loadData;
+    window.toggleGroup = toggleGroup;
   </script>
 </body>
 </html>
