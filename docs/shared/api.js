@@ -14,7 +14,7 @@ class HanuAPI {
       ...options
     };
     
-    // Add content-type for POST/PUT requests with body
+    // Add content-type for POST/PUT/DELETE requests with body
     if (options.body && typeof options.body === 'object') {
       config.body = JSON.stringify(options.body);
       config.headers['Content-Type'] = 'application/json';
@@ -68,9 +68,12 @@ class HanuAPI {
     });
   }
   
-  // DELETE request
-  async delete(endpoint) {
-    return this.request(endpoint, { method: 'DELETE' });
+  // DELETE request - FIXED to support request body
+  async delete(endpoint, body = null) {
+    return this.request(endpoint, { 
+      method: 'DELETE',
+      body
+    });
   }
   
   // System Status
@@ -103,7 +106,7 @@ class HanuAPI {
     return this.post('/api/feed-groups', { feedUrl, groupName });
   }
   
-  // Channel Management - SIMPLIFIED
+  // Channel Management - FIXED
   async getChannels() {
     return this.get('/api/channels');
   }
@@ -113,7 +116,24 @@ class HanuAPI {
   }
   
   async removeChannel(channelId) {
-    return this.delete('/api/channels', { channelId });
+    return this.delete('/api/channels', { channelId }); // Now sends body correctly
+  }
+  
+  // Group Management
+  async getGroups() {
+    return this.get('/api/groups');
+  }
+  
+  async addGroup(groupName) {
+    return this.post('/api/groups', { groupName });
+  }
+  
+  async renameGroup(oldName, newName) {
+    return this.put('/api/groups', { oldName, newName });
+  }
+  
+  async removeGroup(groupName) {
+    return this.delete('/api/groups', { groupName });
   }
   
   // System Prompts
@@ -133,9 +153,17 @@ class HanuAPI {
     return this.post('/api/prompt/test-random', config);
   }
   
-  // Statistics
+  // Statistics - ENHANCED
   async getSystemStats() {
     return this.get('/api/stats');
+  }
+  
+  async getFeedPerformance() {
+    return this.get('/api/stats/feeds');
+  }
+  
+  async getChannelStats() {
+    return this.get('/api/stats/channels');
   }
   
   // Bot Controls
@@ -149,6 +177,15 @@ class HanuAPI {
   
   async resetSeenData() {
     return this.post('/api/reset-seen');
+  }
+  
+  // Settings
+  async getSettings() {
+    return this.get('/api/settings');
+  }
+  
+  async updateSettings(settings) {
+    return this.post('/api/settings', { settings });
   }
   
   // Public endpoints (no auth required)
