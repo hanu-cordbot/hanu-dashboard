@@ -6,6 +6,167 @@
   <link href="shared/common.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    .test-config {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    
+    .test-config h4 {
+      margin: 0 0 15px 0;
+      color: #495057;
+      border-bottom: 1px solid #dee2e6;
+      padding-bottom: 8px;
+    }
+    
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    
+    .config-section {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+    
+    .config-section h5 {
+      margin: 0 0 10px 0;
+      color: #6c757d;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .feed-channel-selector {
+      max-height: 120px;
+      overflow-y: auto;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 8px;
+      background: #fafafa;
+    }
+    
+    .feed-channel-item {
+      display: flex;
+      align-items: center;
+      padding: 4px 0;
+      font-size: 13px;
+    }
+    
+    .feed-channel-item input[type="checkbox"] {
+      margin-right: 8px;
+    }
+    
+    .feed-channel-item label {
+      flex: 1;
+      cursor: pointer;
+      color: #495057;
+    }
+    
+    .test-results-grid {
+      display: grid;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    .test-result-item {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 15px;
+    }
+    
+    .test-result-item.success {
+      border-left: 4px solid #28a745;
+    }
+    
+    .test-result-item.error {
+      border-left: 4px solid #dc3545;
+    }
+    
+    .test-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 13px;
+      color: #6c757d;
+    }
+    
+    .test-content {
+      background: white;
+      padding: 12px;
+      border-radius: 4px;
+      margin: 10px 0;
+      white-space: pre-wrap;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      line-height: 1.4;
+    }
+    
+    .config-controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .slider-container input[type="range"] {
+      flex: 1;
+      min-width: 100px;
+    }
+    
+    .slider-value {
+      min-width: 30px;
+      text-align: center;
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    .quick-select {
+      display: flex;
+      gap: 5px;
+      margin-top: 8px;
+    }
+    
+    .quick-select button {
+      padding: 4px 8px;
+      font-size: 11px;
+      border: 1px solid #dee2e6;
+      background: #f8f9fa;
+      color: #495057;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    
+    .quick-select button:hover {
+      background: #e9ecef;
+    }
+    
+    .test-progress {
+      background: #e9ecef;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+    
+    .test-progress-bar {
+      background: #007bff;
+      height: 6px;
+      transition: width 0.3s ease;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -64,10 +225,10 @@
         </div>
       </div>
 
-      <!-- Prompt Testing -->
+      <!-- Basic Prompt Testing -->
       <div class="section">
-        <h2>🧪 Test Prompt</h2>
-        <p>Test your prompt with sample RSS feed content to see how the AI responds</p>
+        <h2>🧪 Basic Prompt Testing</h2>
+        <p>Test your prompt with manual RSS feed content</p>
         
         <div class="form-group mb-15">
           <textarea id="test-content" rows="6" placeholder="Paste sample RSS feed content here for testing...">
@@ -85,6 +246,129 @@ Ngày đăng: 2025-07-21T08:00:00
         </div>
 
         <div id="test-results"></div>
+      </div>
+
+      <!-- Advanced Random Testing -->
+      <div class="section">
+        <h2>🎲 Advanced Random Testing</h2>
+        <p>Test your prompt with random feeds and channels from your actual system</p>
+        
+        <div class="test-config">
+          <h4>🔧 Test Configuration</h4>
+          
+          <div class="config-grid">
+            <!-- Test Parameters -->
+            <div class="config-section">
+              <h5>📊 Test Parameters</h5>
+              
+              <div class="form-group">
+                <label>Number of Tests:</label>
+                <div class="slider-container">
+                  <input type="range" id="post-count" min="1" max="10" value="3" oninput="updateSliderValue('post-count', 'post-count-value')">
+                  <span class="slider-value" id="post-count-value">3</span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>
+                  <input type="checkbox" id="include-media"> Include Media Content
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label>Test Type:</label>
+                <select id="test-type" class="w-full">
+                  <option value="random">Random Selection</option>
+                  <option value="recent">Recent Posts Only</option>
+                  <option value="popular">Popular Feeds Only</option>
+                  <option value="mixed">Mixed Strategy</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Feed Selection -->
+            <div class="config-section">
+              <h5>📰 Feed Pool</h5>
+              
+              <div class="quick-select">
+                <button onclick="selectAllFeeds()">All</button>
+                <button onclick="selectActiveFeeds()">Active Only</button>
+                <button onclick="selectMappedFeeds()">Mapped Only</button>
+                <button onclick="clearFeedSelection()">None</button>
+              </div>
+              
+              <div class="feed-channel-selector" id="feed-selector">
+                <div class="loading">Loading feeds...</div>
+              </div>
+              
+              <small class="text-muted">
+                <span id="selected-feeds-count">0</span> feeds selected
+              </small>
+            </div>
+
+            <!-- Channel Selection -->
+            <div class="config-section">
+              <h5>📺 Channel Pool</h5>
+              
+              <div class="quick-select">
+                <button onclick="selectAllChannels()">All</button>
+                <button onclick="selectTextChannels()">Text Only</button>
+                <button onclick="selectForumChannels()">Forum Only</button>
+                <button onclick="clearChannelSelection()">None</button>
+              </div>
+              
+              <div class="feed-channel-selector" id="channel-selector">
+                <div class="loading">Loading channels...</div>
+              </div>
+              
+              <small class="text-muted">
+                <span id="selected-channels-count">0</span> channels selected
+              </small>
+            </div>
+
+            <!-- Exclusions -->
+            <div class="config-section">
+              <h5>🚫 Exclusions</h5>
+              
+              <div class="form-group">
+                <label>Exclude Feeds:</label>
+                <div class="feed-channel-selector" id="exclude-feeds-selector">
+                  <div class="loading">Loading feeds...</div>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>Exclude Channels:</label>
+                <div class="feed-channel-selector" id="exclude-channels-selector">
+                  <div class="loading">Loading channels...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Test Controls -->
+          <div class="config-controls mt-20">
+            <button onclick="runRandomTests()" class="btn btn-primary" id="random-test-btn">
+              🎲 Run Random Tests
+            </button>
+            <button onclick="clearRandomResults()" class="btn btn-secondary">
+              🗑️ Clear Results
+            </button>
+            <button onclick="saveTestConfig()" class="btn btn-outline">
+              💾 Save Config
+            </button>
+            <button onclick="loadTestConfig()" class="btn btn-outline">
+              📂 Load Config
+            </button>
+          </div>
+          
+          <div id="test-progress" class="test-progress" style="display: none;">
+            <div id="test-progress-bar" class="test-progress-bar"></div>
+          </div>
+        </div>
+
+        <!-- Random Test Results -->
+        <div id="random-test-results"></div>
       </div>
 
       <!-- Prompt Templates -->
@@ -109,6 +393,17 @@ Ngày đăng: 2025-07-21T08:00:00
 
     let sections = [];
     let lastSavedTime = null;
+    let availableFeeds = [];
+    let availableChannels = [];
+    let testConfig = {
+      feedPool: [],
+      channelPool: [],
+      excludeFeeds: [],
+      excludeChannels: [],
+      postCount: 3,
+      includeMedia: false,
+      testType: 'random'
+    };
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
@@ -116,6 +411,8 @@ Ngày đăng: 2025-07-21T08:00:00
       
       HanuAuth.onLogin(async () => {
         await loadPrompt();
+        await loadFeedsAndChannels();
+        loadTestConfig();
       });
       
       twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
@@ -126,9 +423,375 @@ Ngày đăng: 2025-07-21T08:00:00
           document.getElementById('auth-section').classList.add('hidden');
           document.getElementById('main-content').classList.remove('hidden');
           await loadPrompt();
+          await loadFeedsAndChannels();
+          loadTestConfig();
         }
       }
     });
+
+    // Load feeds and channels for random testing
+    async function loadFeedsAndChannels() {
+      try {
+        const [feedsData, channelsData] = await Promise.all([
+          HanuAPI.getFeeds(),
+          HanuAPI.getChannels()
+        ]);
+        
+        availableFeeds = feedsData.feeds || [];
+        availableChannels = channelsData.channels || [];
+        
+        renderFeedChannelSelectors();
+        updateSelectionCounts();
+        
+      } catch (error) {
+        console.error('Failed to load feeds/channels:', error);
+        showAlert('Failed to load feeds and channels for testing', 'warning');
+      }
+    }
+
+    // Render feed and channel selectors
+    function renderFeedChannelSelectors() {
+      // Main feed selector
+      const feedSelector = document.getElementById('feed-selector');
+      let feedHtml = '';
+      availableFeeds.forEach(feed => {
+        const checked = testConfig.feedPool.includes(feed.url) ? 'checked' : '';
+        feedHtml += `
+          <div class="feed-channel-item">
+            <input type="checkbox" id="feed-${feed.url}" ${checked} 
+                   onchange="toggleFeedSelection('${feed.url}')">
+            <label for="feed-${feed.url}">${feed.title}</label>
+          </div>
+        `;
+      });
+      feedSelector.innerHTML = feedHtml || '<div class="text-muted">No feeds available</div>';
+
+      // Main channel selector
+      const channelSelector = document.getElementById('channel-selector');
+      let channelHtml = '';
+      availableChannels.forEach(channel => {
+        const checked = testConfig.channelPool.includes(channel.id) ? 'checked' : '';
+        const emoji = channel.type === 'forum' ? '💬' : (channel.type === 'voice' ? '🔊' : '📝');
+        channelHtml += `
+          <div class="feed-channel-item">
+            <input type="checkbox" id="channel-${channel.id}" ${checked} 
+                   onchange="toggleChannelSelection('${channel.id}')">
+            <label for="channel-${channel.id}">${emoji} ${channel.name}</label>
+          </div>
+        `;
+      });
+      channelSelector.innerHTML = channelHtml || '<div class="text-muted">No channels available</div>';
+
+      // Exclude feeds selector
+      const excludeFeedsSelector = document.getElementById('exclude-feeds-selector');
+      let excludeFeedHtml = '';
+      availableFeeds.forEach(feed => {
+        const checked = testConfig.excludeFeeds.includes(feed.url) ? 'checked' : '';
+        excludeFeedHtml += `
+          <div class="feed-channel-item">
+            <input type="checkbox" id="exclude-feed-${feed.url}" ${checked} 
+                   onchange="toggleExcludeFeed('${feed.url}')">
+            <label for="exclude-feed-${feed.url}">${feed.title}</label>
+          </div>
+        `;
+      });
+      excludeFeedsSelector.innerHTML = excludeFeedHtml || '<div class="text-muted">No feeds to exclude</div>';
+
+      // Exclude channels selector
+      const excludeChannelsSelector = document.getElementById('exclude-channels-selector');
+      let excludeChannelHtml = '';
+      availableChannels.forEach(channel => {
+        const checked = testConfig.excludeChannels.includes(channel.id) ? 'checked' : '';
+        const emoji = channel.type === 'forum' ? '💬' : (channel.type === 'voice' ? '🔊' : '📝');
+        excludeChannelHtml += `
+          <div class="feed-channel-item">
+            <input type="checkbox" id="exclude-channel-${channel.id}" ${checked} 
+                   onchange="toggleExcludeChannel('${channel.id}')">
+            <label for="exclude-channel-${channel.id}">${emoji} ${channel.name}</label>
+          </div>
+        `;
+      });
+      excludeChannelsSelector.innerHTML = excludeChannelHtml || '<div class="text-muted">No channels to exclude</div>';
+    }
+
+    // Toggle selections
+    window.toggleFeedSelection = function(feedUrl) {
+      const index = testConfig.feedPool.indexOf(feedUrl);
+      if (index > -1) {
+        testConfig.feedPool.splice(index, 1);
+      } else {
+        testConfig.feedPool.push(feedUrl);
+      }
+      updateSelectionCounts();
+    };
+
+    window.toggleChannelSelection = function(channelId) {
+      const index = testConfig.channelPool.indexOf(channelId);
+      if (index > -1) {
+        testConfig.channelPool.splice(index, 1);
+      } else {
+        testConfig.channelPool.push(channelId);
+      }
+      updateSelectionCounts();
+    };
+
+    window.toggleExcludeFeed = function(feedUrl) {
+      const index = testConfig.excludeFeeds.indexOf(feedUrl);
+      if (index > -1) {
+        testConfig.excludeFeeds.splice(index, 1);
+      } else {
+        testConfig.excludeFeeds.push(feedUrl);
+      }
+    };
+
+    window.toggleExcludeChannel = function(channelId) {
+      const index = testConfig.excludeChannels.indexOf(channelId);
+      if (index > -1) {
+        testConfig.excludeChannels.splice(index, 1);
+      } else {
+        testConfig.excludeChannels.push(channelId);
+      }
+    };
+
+    // Quick selection functions
+    window.selectAllFeeds = function() {
+      testConfig.feedPool = availableFeeds.map(f => f.url);
+      renderFeedChannelSelectors();
+      updateSelectionCounts();
+    };
+
+    window.selectActiveFeeds = function() {
+      const activeFeeds = availableFeeds.filter(f => f.lastPost && 
+        (Date.now() - new Date(f.lastPost)) < (14 * 24 * 60 * 60 * 1000));
+      testConfig.feedPool = activeFeeds.map(f => f.url);
+      renderFeedChannelSelectors();
+      updateSelectionCounts();
+    };
+
+    window.selectMappedFeeds = function() {
+      // This would need mapping data - simplified for now
+      testConfig.feedPool = availableFeeds.slice(0, Math.ceil(availableFeeds.length / 2)).map(f => f.url);
+      renderFeedChannelSelectors();
+      updateSelectionCounts();
+    };
+
+    window.clearFeedSelection = function() {
+      testConfig.feedPool = [];
+      renderFeedChannelSelectors();
+      updateSelectionCounts();
+    };
+
+    window.selectAllChannels = function() {
+      testConfig.channelPool = availableChannels.map(c => c.id);
+      renderFeedChannelSelectors();
+      updateSelectionCounts();
+    };
+
+    window.selectTextChannels = function() {
+      const textChannels = availableChannels.filter(c => c.type === 'text');
+      testConfig.channelPool = textChannels.map(c => c.id);
+      renderFeedChannelSelectors();
+      updateSelectionCounts();
+    };
+
+    window.selectForumChannels = function() {
+      const forumChannels = availableChannels.filter(c => c.type === 'forum');
+      testConfig.channelPool = forumChannels.map(c => c.id);
+      renderFeedChannelSelectors();
+      updateSelectionCounts();
+    };
+
+    window.clearChannelSelection = function() {
+      testConfig.channelPool = [];
+      renderFeedChannelSelectors();
+      updateSelectionCounts();
+    };
+
+    // Update selection counts
+    function updateSelectionCounts() {
+      document.getElementById('selected-feeds-count').textContent = testConfig.feedPool.length;
+      document.getElementById('selected-channels-count').textContent = testConfig.channelPool.length;
+    }
+
+    // Update slider values
+    window.updateSliderValue = function(sliderId, valueId) {
+      const slider = document.getElementById(sliderId);
+      const valueSpan = document.getElementById(valueId);
+      valueSpan.textContent = slider.value;
+      
+      if (sliderId === 'post-count') {
+        testConfig.postCount = parseInt(slider.value);
+      }
+    };
+
+    // Run random tests
+    window.runRandomTests = async function() {
+      const button = document.getElementById('random-test-btn');
+      const progressContainer = document.getElementById('test-progress');
+      const progressBar = document.getElementById('test-progress-bar');
+      const resultsContainer = document.getElementById('random-test-results');
+
+      // Update config from UI
+      testConfig.postCount = parseInt(document.getElementById('post-count').value);
+      testConfig.includeMedia = document.getElementById('include-media').checked;
+      testConfig.testType = document.getElementById('test-type').value;
+
+      // Validation
+      if (testConfig.feedPool.length === 0 || testConfig.channelPool.length === 0) {
+        showAlert('Please select at least one feed and one channel for testing', 'warning');
+        return;
+      }
+
+      button.disabled = true;
+      button.innerHTML = '<span class="loading-spinner"></span> Running Tests...';
+      progressContainer.style.display = 'block';
+      progressBar.style.width = '0%';
+
+      try {
+        // Show initial progress
+        progressBar.style.width = '10%';
+        
+        resultsContainer.innerHTML = `
+          <div class="test-result-item">
+            <h3>🎲 Initializing Random Tests...</h3>
+            <p>Configuration: ${testConfig.postCount} tests, ${testConfig.feedPool.length} feeds, ${testConfig.channelPool.length} channels</p>
+          </div>
+        `;
+
+        // Call the API
+        const response = await HanuAPI.testRandomPrompt(testConfig);
+        progressBar.style.width = '100%';
+
+        // Display results
+        displayRandomTestResults(response);
+        
+        showAlert(`Random testing completed! Generated ${response.results?.length || 0} test cases 🎉`, 'success');
+
+      } catch (error) {
+        console.error('Random test failed:', error);
+        resultsContainer.innerHTML = `
+          <div class="test-result-item error">
+            <h3>❌ Random Test Failed</h3>
+            <p style="color: #dc3545;">${error.message}</p>
+          </div>
+        `;
+        showAlert('Random testing failed: ' + error.message, 'danger');
+      } finally {
+        button.disabled = false;
+        button.innerHTML = '🎲 Run Random Tests';
+        setTimeout(() => {
+          progressContainer.style.display = 'none';
+        }, 1000);
+      }
+    };
+
+    // Display random test results
+    function displayRandomTestResults(response) {
+      const resultsContainer = document.getElementById('random-test-results');
+      
+      if (!response.results || response.results.length === 0) {
+        resultsContainer.innerHTML = `
+          <div class="test-result-item">
+            <h3>⚠️ No Test Results</h3>
+            <p>No test cases were generated. Check your configuration.</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = `
+        <div class="test-result-item success">
+          <h3>🎉 Random Test Results</h3>
+          <div class="test-meta">
+            <span>Tests: ${response.results.length}</span>
+            <span>Available Feeds: ${response.available?.feeds || 0}</span>
+            <span>Available Channels: ${response.available?.channels || 0}</span>
+            <span>Generated: ${new Date().toLocaleString()}</span>
+          </div>
+        </div>
+        
+        <div class="test-results-grid">
+      `;
+
+      response.results.forEach((result, index) => {
+        const statusClass = result.status === 'success' ? 'success' : 'error';
+        html += `
+          <div class="test-result-item ${statusClass}">
+            <div class="test-meta">
+              <span><strong>Test ${index + 1}</strong></span>
+              <span>Feed: ${result.feed_url?.split('/').pop() || 'Unknown'}</span>
+              <span>Channel: #${result.channel_name || 'Unknown'}</span>
+              ${result.processing_time ? `<span>Time: ${result.processing_time}ms</span>` : ''}
+            </div>
+            
+            <h4>${result.title}</h4>
+            
+            ${result.status === 'success' ? `
+              <div class="test-content">${result.ai_response || 'No AI response'}</div>
+            ` : `
+              <div style="color: #dc3545; padding: 10px;">
+                <strong>Error:</strong> ${result.error || 'Unknown error'}
+              </div>
+            `}
+            
+            <details style="margin-top: 10px;">
+              <summary style="cursor: pointer; color: #6c757d;">Show Test Data</summary>
+              <div class="test-content" style="margin-top: 8px; font-size: 12px;">
+                <strong>Original Content:</strong><br>
+                ${result.content}
+                <br><br>
+                <strong>Configuration:</strong><br>
+                Channel Type: ${result.channel_name} (${result.channel_id})<br>
+                Has Media: ${result.has_media ? 'Yes' : 'No'}<br>
+                Timestamp: ${result.timestamp}
+              </div>
+            </details>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      resultsContainer.innerHTML = html;
+      twemoji.parse(resultsContainer, { folder: 'svg', ext: '.svg' });
+    }
+
+    // Clear random results
+    window.clearRandomResults = function() {
+      document.getElementById('random-test-results').innerHTML = '';
+    };
+
+    // Save/Load test configuration
+    window.saveTestConfig = function() {
+      try {
+        localStorage.setItem('hanu-test-config', JSON.stringify(testConfig));
+        showAlert('Test configuration saved! 💾', 'success');
+      } catch (error) {
+        showAlert('Failed to save configuration', 'warning');
+      }
+    };
+
+    window.loadTestConfig = function() {
+      try {
+        const saved = localStorage.getItem('hanu-test-config');
+        if (saved) {
+          testConfig = { ...testConfig, ...JSON.parse(saved) };
+          
+          // Update UI
+          document.getElementById('post-count').value = testConfig.postCount;
+          document.getElementById('post-count-value').textContent = testConfig.postCount;
+          document.getElementById('include-media').checked = testConfig.includeMedia;
+          document.getElementById('test-type').value = testConfig.testType;
+          
+          renderFeedChannelSelectors();
+          updateSelectionCounts();
+          showAlert('Test configuration loaded! 📂', 'success');
+        } else {
+          showAlert('No saved configuration found', 'info');
+        }
+      } catch (error) {
+        showAlert('Failed to load configuration', 'warning');
+      }
+    };
 
     // Load current prompt
     async function loadPrompt() {
