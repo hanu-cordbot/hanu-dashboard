@@ -118,6 +118,14 @@ class HanuAPI {
   async removeChannel(channelId) {
     return this.delete('/api/channels', { channelId }); // Now sends body correctly
   }
+
+    async fetchChannelName(channelId) {
+    return this.post('/api/channels/fetch-name', { channelId });
+  }
+
+  async renameGroup(oldName, newName) {
+    return this.put('/api/groups', { oldName, newName });
+  }
   
   // Group Management
   async getGroups() {
