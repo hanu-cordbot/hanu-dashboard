@@ -914,7 +914,7 @@
       });
     });
 
-        // REPLACE THE ENTIRE triggerTestPost FUNCTION WITH THIS:
+    // REPLACE THE ENTIRE triggerTestPost FUNCTION WITH THIS:
     window.triggerTestPost = async function() {
       const feedSelect = document.getElementById('test-feed-select');
       const skipFilters = document.getElementById('skip-filters').checked;
@@ -989,46 +989,43 @@
       }
     };
 
-      const feedSelect = document.getElementById('test-feed-select');
-      const skipFilters = document.getElementById('skip-filters').checked;
-      const button = document.getElementById('test-post-btn');
+        // ADD THIS FUNCTION AFTER triggerTestPost:
+    window.wakeBotService = async function() {
+      const button = document.getElementById('wake-bot-btn');
       const output = document.getElementById('test-output');
       
-      const feedUrl = feedSelect.value;
-      if (!feedUrl) {
-        showAlert('Please select a feed to test', 'warning');
-        return;
-      }
-      
       button.disabled = true;
-      button.innerHTML = '<span class="loading-spinner"></span> Testing...';
+      button.innerHTML = '<span class="loading-spinner"></span> Waking...';
       output.classList.remove('hidden');
-      output.textContent = '🧪 Triggering test post...';
+      output.textContent = '⏰ Sending wake-up signal to Railway bot...';
       
       try {
-        const response = await fetch('https://hanu-cordbot.snacky496.workers.dev/api/test-post', {
+        const response = await fetch('https://hanu-cordbot.snacky496.workers.dev/api/wake-bot', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${HanuAuth.getToken()}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            feedUrl: feedUrl,
-            skipFilters: skipFilters
-          })
+          signal: AbortSignal.timeout(60000) // 1 minute timeout
         });
         
         const result = await response.json();
         
-        output.textContent = `✅ Test completed!\n\nFeed: ${feedUrl}\nSkip Filters: ${skipFilters}\nResult: ${JSON.stringify(result, null, 2)}`;
-        showAlert('Test post triggered! Check your Discord channel. 🧪', 'success');
+        if (result.success) {
+          output.textContent = '✅ Railway bot is now awake and ready!\n\nYou can now safely use "Test Post" or "Run Bot Now".';
+          showAlert('Bot service is awake! 🎉', 'success');
+        } else {
+          output.textContent = `⚠️ Wake-up may have failed.\n\nStatus: ${result.status}\nMessage: ${result.message}`;
+          showAlert('Bot wake-up uncertain - try again if needed', 'warning');
+        }
         
       } catch (error) {
-        output.textContent = `❌ Test failed: ${error.message}`;
-        showAlert('Test post failed: ' + error.message, 'danger');
+        console.error('Wake-up error:', error);
+        output.textContent = `❌ Wake-up failed: ${error.message}`;
+        showAlert('Failed to wake bot: ' + error.message, 'danger');
       } finally {
         button.disabled = false;
-        button.innerHTML = '🧪 Test Post';
+        button.innerHTML = '⏰ Wake Bot';
       }
     };
 
