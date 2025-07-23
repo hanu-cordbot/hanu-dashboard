@@ -198,6 +198,7 @@
       // Setup authentication UI FIRST
       HanuAuth.setupAuthUI();
       console.log('🔐 Auth UI setup complete');
+      console.log('🔐 Auth debug info:', HanuAuth.getDebugInfo());
       
       // Setup authentication callback
       HanuAuth.onLogin(async () => {
