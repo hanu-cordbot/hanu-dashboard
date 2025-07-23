@@ -120,7 +120,7 @@
           <input type="text" id="new-channel-id" placeholder="Discord Channel ID (e.g., 1393802593704083486)">
           <button onclick="addChannel()" class="btn btn-primary">➕ Add Channel</button>
           <small style="display: block; margin-top: 5px; color: #6c757d;">
-            💡 Channel names will be automatically updated when bot runs
+            💡 Channel names will be fetched instantly from Discord
           </small>
         </div>
         
@@ -144,6 +144,19 @@
     </div>
   </div>
 
+  <!-- Group Rename Modal -->
+  <div id="rename-group-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 8px; min-width: 400px;">
+      <h3>📝 Rename Group</h3>
+      <p>Current name: <strong id="current-group-name"></strong></p>
+      <input type="text" id="new-group-name-input" placeholder="Enter new group name" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
+      <div style="text-align: right; margin-top: 20px;">
+        <button onclick="cancelRenameGroup()" class="btn btn-secondary">Cancel</button>
+        <button onclick="confirmRenameGroup()" class="btn btn-primary">Rename</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script type="module">
     import HanuAuth from './shared/auth.js';
@@ -159,6 +172,7 @@
     let currentFilter = 'all';
     let feedMetadata = {};
     let statsInterval = null;
+    let currentRenameGroup = null;
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
@@ -363,7 +377,7 @@
       container.innerHTML = html;
     }
 
-    // FIXED: Render grouped feed list with empty groups
+    // ENHANCED: Render grouped feed list with group management
     function renderGroupedFeeds(feedList) {
       const container = document.getElementById('feeds-container');
       
@@ -375,7 +389,7 @@
         groupedFeeds[group].push(feed);
       });
 
-      // FIXED: Add empty groups that exist but have no feeds
+      // Add empty groups that exist but have no feeds
       Object.keys(groups).forEach(groupName => {
         if (!groupedFeeds[groupName]) {
           groupedFeeds[groupName] = [];
@@ -392,7 +406,10 @@
               <div class="card-title">📁 ${groupName} (${groupFeeds.length})</div>
               <div>
                 <button onclick="toggleGroup('${groupName}')" class="btn btn-outline">👁️ Toggle</button>
-                ${groupName !== 'Ungrouped' ? `<button onclick="removeGroup('${groupName}')" class="btn btn-danger">🗑️</button>` : ''}
+                ${groupName !== 'Ungrouped' ? `
+                  <button onclick="renameGroup('${groupName}')" class="btn btn-secondary">✏️ Rename</button>
+                  <button onclick="removeGroup('${groupName}')" class="btn btn-danger">🗑️</button>
+                ` : ''}
               </div>
             </div>
             <div class="group-feeds" id="group-${groupName}">
@@ -429,7 +446,7 @@
       container.innerHTML = html;
     }
 
-    // Render channels list
+    // ENHANCED: Render channels list without "Real Name" and type text
     function renderChannels() {
       const container = document.getElementById('channels-list');
       
@@ -441,7 +458,6 @@
       let html = '';
       channels.forEach(channel => {
         const feedCount = Object.values(feedMappings).filter(id => id == channel.id).length;
-        const isPlaceholder = channel.placeholder || channel.name?.startsWith('Channel-');
         const displayName = getChannelDisplayName(channel);
         
         html += `
@@ -449,14 +465,11 @@
             <div class="flex-between">
               <div>
                 <strong>${displayName}</strong>
-                ${isPlaceholder ? '<span class="badge bg-warning">📋 Placeholder</span>' : '<span class="badge bg-success">✅ Real Name</span>'}
-                <span class="badge bg-secondary">${channel.type || 'text'}</span>
                 <small class="text-muted">ID: ${channel.id}</small>
                 <span class="badge bg-info">${feedCount} feeds</span>
               </div>
               <button onclick="removeChannel('${channel.id}')" class="btn btn-danger">🗑️ Remove</button>
             </div>
-            ${isPlaceholder ? '<small class="text-muted" style="margin-left: 15px;">💡 Real name will be fetched when bot runs</small>' : ''}
           </div>
         `;
       });
@@ -493,6 +506,7 @@
       return channel ? getChannelDisplayName(channel) : 'Unknown';
     }
 
+    // FIXED: Only show emoji, no type text
     function getChannelDisplayName(channel) {
       const emoji = channel.type === 'forum' ? '💬' : (channel.type === 'voice' ? '🔊' : '📝');
       const name = channel.name || `Channel-${channel.id.toString().slice(-4)}`;
@@ -602,7 +616,7 @@
       }
     };
 
-    // Group management
+    // ENHANCED: Group management with rename functionality
     window.addGroup = async function() {
       const input = document.getElementById('new-group-name');
       const name = input.value.trim();
@@ -622,7 +636,44 @@
       }
     };
 
-    // FIXED: Group removal with proper URL encoding
+    // NEW: Group rename functionality
+    window.renameGroup = function(groupName) {
+      currentRenameGroup = groupName;
+      document.getElementById('current-group-name').textContent = groupName;
+      document.getElementById('new-group-name-input').value = groupName;
+      document.getElementById('rename-group-modal').style.display = 'block';
+      document.getElementById('new-group-name-input').focus();
+    };
+
+    window.cancelRenameGroup = function() {
+      document.getElementById('rename-group-modal').style.display = 'none';
+      currentRenameGroup = null;
+    };
+
+    window.confirmRenameGroup = async function() {
+      const newName = document.getElementById('new-group-name-input').value.trim();
+      
+      if (!newName) {
+        showAlert('Please enter a new group name', 'warning');
+        return;
+      }
+
+      if (newName === currentRenameGroup) {
+        cancelRenameGroup();
+        return;
+      }
+
+      try {
+        await HanuAPI.renameGroup(currentRenameGroup, newName);
+        await loadAllData();
+        showAlert(`Group renamed from "${currentRenameGroup}" to "${newName}"! ✏️`, 'success');
+        cancelRenameGroup();
+      } catch (error) {
+        showAlert('Failed to rename group: ' + error.message, 'danger');
+      }
+    };
+
+    // FIXED: Group removal
     window.removeGroup = async function(groupName) {
       if (!confirm(`Remove group "${groupName}"? Feeds will become ungrouped.`)) return;
 
@@ -643,7 +694,7 @@
       }
     };
 
-    // FIXED: Channel management with auto-refresh
+    // ENHANCED: Instant channel name fetching
     window.addChannel = async function() {
       const idInput = document.getElementById('new-channel-id');
       const channelId = idInput.value.trim();
@@ -660,13 +711,25 @@
       }
 
       try {
-        // Add channel
+        // Add channel first
         await HanuAPI.addChannel(channelId);
         idInput.value = '';
         
-        // FIXED: Immediately refresh data to show the new channel
-        await loadAllData();
-        showAlert('Channel added! Name will be updated when bot runs. 💬', 'success');
+        // Show loading state
+        showAlert('Channel added! Fetching name from Discord...', 'info');
+        
+        // Try to fetch real name instantly
+        try {
+          await HanuAPI.fetchChannelName(channelId);
+          setTimeout(async () => {
+            await loadAllData();
+            showAlert('Channel name fetched successfully! 💬', 'success');
+          }, 1000);
+        } catch (fetchError) {
+          // If instant fetch fails, fallback to bot sync
+          await loadAllData();
+          showAlert('Channel added! Name will be updated when bot runs. 💬', 'success');
+        }
         
       } catch (error) {
         showAlert('Failed to add channel: ' + error.message, 'danger');
@@ -686,7 +749,7 @@
       }
     };
 
-    // FIXED: Bot controls with proper result display
+    // Bot controls with proper result display
     window.runBot = async function() {
       const button = document.getElementById('run-bot-btn');
       const output = document.getElementById('job-output');
@@ -699,13 +762,12 @@
       try {
         const result = await HanuAPI.runBot();
         
-        // FIXED: Handle object result properly
         const resultText = typeof result === 'object' ? 
           `Status: ${result.success ? 'Success' : 'Failed'}\nMessage: ${result.result || result.error || 'No details'}` : 
           result;
         output.textContent = `✅ Bot job completed!\n\n${resultText}`;
         
-        // Refresh data after successful run to show updated channel names
+        // Refresh data after successful run
         setTimeout(async () => {
           await loadAllData();
           showAlert('📱 Channel names have been synced from Discord!', 'info');
@@ -782,6 +844,16 @@
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
       if (statsInterval) clearInterval(statsInterval);
+    });
+
+    // Handle Enter key in rename modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && document.getElementById('rename-group-modal').style.display === 'block') {
+        confirmRenameGroup();
+      }
+      if (e.key === 'Escape' && document.getElementById('rename-group-modal').style.display === 'block') {
+        cancelRenameGroup();
+      }
     });
   </script>
 </body>
