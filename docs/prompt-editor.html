@@ -152,35 +152,27 @@
       margin-bottom: 15px;
       font-size: 0.9rem;
     }
-    .test-results {
-      background: #f8f9fa;
-      border: 1px solid #dee2e6;
+    .random-controls {
+      background: #f0f8ff;
+      border: 1px solid #b3d9ff;
       border-radius: 4px;
       padding: 15px;
-      margin: 10px 0;
+      margin: 15px 0;
     }
-    .test-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .test-stat {
-      text-align: center;
+    .auth-status {
       padding: 8px;
-      background: white;
       border-radius: 4px;
-      border: 1px solid #dee2e6;
+      margin-top: 8px;
     }
-    .test-stat-value {
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: #495057;
+    .auth-status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
     }
-    .test-stat-label {
-      font-size: 0.8rem;
-      color: #6c757d;
-      margin-top: 4px;
+    .auth-status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
     }
 
     /* Responsive design */
@@ -227,13 +219,24 @@
         <span id="prompt-source" class="status-indicator status-info"></span>
         <span id="prompt-source-text">Loading prompt source...</span>
         <span style="float: right;">
-          <strong>Bot Version:</strong> <span id="bot-version">Loading...</span>
+          <strong>Bot Version:</strong> <span id="bot-version">v2.1.0</span>
         </span>
       </div>
 
       <!-- Test Controls -->
       <div class="test-controls">
         <h3>🧪 Testing Controls</h3>
+        
+        <!-- Random Selection Controls -->
+        <div class="random-controls">
+          <h4 style="margin-top: 0;">🎲 Random Selection</h4>
+          <div class="flex gap-15">
+            <button onclick="selectRandomFeed()" class="btn btn-outline">🎯 Random Feed</button>
+            <button onclick="selectRandomEntry()" class="btn btn-outline">📰 Random Entry</button>
+            <button onclick="selectRandomBoth()" class="btn btn-secondary">🎲 Random Both</button>
+          </div>
+        </div>
+
         <div class="form-row">
           <div class="form-group">
             <label><strong>📡 Feed to Test:</strong></label>
@@ -376,20 +379,6 @@ Click "Test Prompt with AI" to see how the AI processes your prompt with the sel
 
 The response will appear here exactly as returned by the Gemini API.
                 </div>
-                <div id="response-stats" class="test-stats hidden">
-                  <div class="test-stat">
-                    <div class="test-stat-value" id="response-length">0</div>
-                    <div class="test-stat-label">Characters</div>
-                  </div>
-                  <div class="test-stat">
-                    <div class="test-stat-value" id="response-time">0ms</div>
-                    <div class="test-stat-label">Response Time</div>
-                  </div>
-                  <div class="test-stat">
-                    <div class="test-stat-value" id="prompt-parts">0</div>
-                    <div class="test-stat-label">Prompt Parts</div>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -410,25 +399,6 @@ The response will appear here exactly as returned by the Gemini API.
                 </div>
               </div>
             </div>
-
-            <!-- Test Results -->
-            <div id="test-results" class="test-results hidden">
-              <h4>📊 Test Results Summary</h4>
-              <div class="test-stats">
-                <div class="test-stat">
-                  <div class="test-stat-value" id="total-tests">0</div>
-                  <div class="test-stat-label">Tests Run</div>
-                </div>
-                <div class="test-stat">
-                  <div class="test-stat-value" id="success-rate">0%</div>
-                  <div class="test-stat-label">Success Rate</div>
-                </div>
-                <div class="test-stat">
-                  <div class="test-stat-value" id="avg-response-time">0ms</div>
-                  <div class="test-stat-label">Avg Time</div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -438,17 +408,12 @@ The response will appear here exactly as returned by the Gemini API.
   <!-- Scripts -->
   <script type="module">
     import HanuAuth from './shared/auth.js';
-    import HanuAPI from './shared/api.js';
 
     // Global state
+    let allFeeds = [];
     let feeds = [];
     let channels = [];
     let currentEntries = [];
-    let testStats = {
-      totalTests: 0,
-      successfulTests: 0,
-      totalResponseTime: 0
-    };
 
     // Initialize the application
     document.addEventListener('DOMContentLoaded', async () => {
@@ -483,15 +448,27 @@ The response will appear here exactly as returned by the Gemini API.
         showStatusMessage('Loading system data...', 'info');
         
         // Load feeds, channels, and current prompt in parallel
-        const [feedsData, channelsData] = await Promise.all([
-          HanuAPI.getFeeds(),
-          HanuAPI.getChannels()
+        const [feedsResponse, channelsResponse, allFeedsResponse] = await Promise.all([
+          fetch('https://hanu-cordbot.snacky496.workers.dev/api/feeds', {
+            headers: { 'Authorization': `Bearer ${HanuAuth.getToken()}` }
+          }),
+          fetch('https://hanu-cordbot.snacky496.workers.dev/api/channels', {
+            headers: { 'Authorization': `Bearer ${HanuAuth.getToken()}` }
+          }),
+          fetch('https://web-production-b0a5.up.railway.app/all-feeds', {
+            headers: { 'X-Auth': HanuAuth.getToken() }
+          })
         ]);
+
+        const feedsData = await feedsResponse.json();
+        const channelsData = await channelsResponse.json();
+        const allFeedsData = await allFeedsResponse.json();
 
         feeds = feedsData.feeds || [];
         channels = channelsData.channels || [];
+        allFeeds = allFeedsData.feeds || [];
 
-        console.log(`📡 Loaded ${feeds.length} feeds and ${channels.length} channels`);
+        console.log(`📡 Loaded ${feeds.length} dashboard feeds, ${allFeeds.length} total feeds, ${channels.length} channels`);
 
         // Populate dropdowns
         populateFeedDropdown();
@@ -516,13 +493,17 @@ The response will appear here exactly as returned by the Gemini API.
       const feedSelect = document.getElementById('test-feed');
       feedSelect.innerHTML = '<option value="">Select a feed to test with...</option>';
       
-      feeds.forEach((feed, index) => {
-        const title = feed.title || feed.url.substring(feed.url.indexOf('//') + 2, feed.url.indexOf('/', 8));
-        const truncatedTitle = title.length > 60 ? title.substring(0, 60) + '...' : title;
-        feedSelect.innerHTML += `<option value="${index}">${truncatedTitle}</option>`;
+      // Use allFeeds (from feeds.txt) for testing, not just dashboard feeds
+      allFeeds.forEach((feedUrl, index) => {
+        const displayName = feedUrl.includes('facebook.com') ? 
+          feedUrl.split('/').slice(-2).join('/') : 
+          feedUrl.substring(feedUrl.indexOf('//') + 2, feedUrl.indexOf('/', 8));
+        
+        const truncatedName = displayName.length > 50 ? displayName.substring(0, 50) + '...' : displayName;
+        feedSelect.innerHTML += `<option value="${feedUrl}">${truncatedName}</option>`;
       });
       
-      console.log(`📋 Populated ${feeds.length} feeds in dropdown`);
+      console.log(`📋 Populated ${allFeeds.length} feeds in dropdown`);
     }
 
     // Populate channel dropdown
@@ -653,34 +634,36 @@ Preserve all original emojis.
       updatePromptSourceIndicator('Fallback defaults', 'warning');
     }
 
-    // Load entries for selected feed
+    // FIXED: Load entries for selected feed
     window.loadFeedEntries = async function() {
-      const feedIndex = document.getElementById('test-feed').value;
-      if (!feedIndex) {
+      const feedUrl = document.getElementById('test-feed').value;
+      if (!feedUrl) {
         currentEntries = [];
         document.getElementById('test-entry').innerHTML = '<option value="">Select an entry...</option>';
         return;
       }
 
-      const feed = feeds[parseInt(feedIndex)];
-      
       try {
         showStatusMessage('Loading recent entries from feed...', 'info');
         
-        // Try to get real entries from the RSS feed
-        const response = await fetch(`https://web-production-b0a5.up.railway.app/test-entries?feed=${encodeURIComponent(feed.url)}`, {
+        console.log('🔍 Loading entries for feed:', feedUrl);
+        
+        // Get real entries from the RSS feed
+        const response = await fetch(`https://web-production-b0a5.up.railway.app/test-entries?feed=${encodeURIComponent(feedUrl)}`, {
           headers: { 'X-Auth': HanuAuth.getToken() }
         });
         
         if (response.ok) {
           const entries = await response.json();
-          currentEntries = entries.slice(0, 10); // Last 10 entries
+          currentEntries = entries.slice(0, 15); // Last 15 entries
+          
+          console.log(`📰 Loaded ${currentEntries.length} entries`);
           
           const entrySelect = document.getElementById('test-entry');
           entrySelect.innerHTML = '<option value="">Select an entry...</option>';
           
           currentEntries.forEach((entry, index) => {
-            const title = entry.title?.substring(0, 50) + '...' || `Entry ${index + 1}`;
+            const title = entry.title?.substring(0, 60) + '...' || `Entry ${index + 1}`;
             const date = entry.published ? new Date(entry.published).toLocaleDateString() : 'No date';
             entrySelect.innerHTML += `<option value="${index}">${title} (${date})</option>`;
           });
@@ -691,28 +674,91 @@ Preserve all original emojis.
         }
 
       } catch (error) {
-        console.error('Failed to load real entries:', error);
-        showStatusMessage('Using sample entry (real feed unavailable)', 'warning', 3000);
+        console.error('❌ Failed to load real entries:', error);
+        showStatusMessage('Failed to load entries: ' + error.message, 'warning');
         
-        // Fallback to mock data
-        currentEntries = [{
-          title: `Sample Entry from ${feed.title || 'RSS Feed'}`,
-          content: `This is a sample RSS entry for testing purposes. It contains some Vietnamese text for testing: 
-
-Đây là một bài viết mẫu từ HANU về các hoạt động sinh viên. Bài viết này có thể chứa thông tin về:
-- Các sự kiện sắp tới 
-- Thông báo quan trọng
-- Hoạt động câu lạc bộ
-
-Content would normally come from the actual RSS feed parsing.`,
-          link: feed.url,
-          published: new Date().toISOString(),
-          guid: `sample-${Date.now()}`
-        }];
-        
-        document.getElementById('test-entry').innerHTML = 
-          '<option value="">Select an entry...</option><option value="0">📝 Sample Test Entry</option>';
+        // Clear entries on error
+        currentEntries = [];
+        document.getElementById('test-entry').innerHTML = '<option value="">No entries available</option>';
       }
+    };
+
+    // NEW: Random selection functions
+    window.selectRandomFeed = function() {
+      if (allFeeds.length === 0) {
+        showStatusMessage('No feeds available for random selection', 'warning');
+        return;
+      }
+      
+      const randomIndex = Math.floor(Math.random() * allFeeds.length);
+      const feedSelect = document.getElementById('test-feed');
+      feedSelect.selectedIndex = randomIndex + 1; // +1 because of placeholder option
+      
+      showStatusMessage('🎯 Random feed selected!', 'info', 2000);
+      
+      // Trigger entry loading
+      loadFeedEntries();
+    };
+
+    window.selectRandomEntry = async function() {
+      try {
+        showStatusMessage('Getting random entry...', 'info');
+        
+        const response = await fetch('https://web-production-b0a5.up.railway.app/random-entry', {
+          headers: { 'X-Auth': HanuAuth.getToken() }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          const entry = result.entry;
+          
+          // Find and select the feed
+          const feedSelect = document.getElementById('test-feed');
+          const feedIndex = Array.from(feedSelect.options).findIndex(option => option.value === entry.feed);
+          
+          if (feedIndex > 0) {
+            feedSelect.selectedIndex = feedIndex;
+            await loadFeedEntries();
+            
+            // Wait a bit for entries to load, then select the random one
+            setTimeout(() => {
+              // Create a mock entry list with just this entry
+              currentEntries = [entry];
+              const entrySelect = document.getElementById('test-entry');
+              entrySelect.innerHTML = '<option value="">Select an entry...</option>';
+              entrySelect.innerHTML += `<option value="0" selected>🎲 ${entry.title.substring(0, 60)}... (Random)</option>`;
+              entrySelect.selectedIndex = 1;
+              
+              // Preview the entry
+              previewTestEntry();
+              
+              showStatusMessage('🎲 Random entry selected!', 'success', 2000);
+            }, 1000);
+          } else {
+            showStatusMessage('Could not find feed for random entry', 'warning');
+          }
+        } else {
+          throw new Error(result.error || 'Failed to get random entry');
+        }
+      } catch (error) {
+        console.error('❌ Failed to get random entry:', error);
+        showStatusMessage('Failed to get random entry: ' + error.message, 'error');
+      }
+    };
+
+    window.selectRandomBoth = function() {
+      selectRandomFeed();
+      // Wait for feed to load, then select random entry
+      setTimeout(() => {
+        if (currentEntries.length > 0) {
+          const randomIndex = Math.floor(Math.random() * currentEntries.length);
+          const entrySelect = document.getElementById('test-entry');
+          entrySelect.selectedIndex = randomIndex + 1; // +1 for placeholder
+          previewTestEntry();
+          showStatusMessage('🎲 Random feed and entry selected!', 'success', 2000);
+        }
+      }, 2000);
     };
 
     // Preview selected test entry
@@ -732,8 +778,9 @@ Content would normally come from the actual RSS feed parsing.`,
       document.getElementById('test-entry-display').innerHTML = `
         <h4 style="margin-top: 0; color: #495057;">📰 ${entry.title}</h4>
         <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0;">
+          <strong>Source:</strong> ${entry.page_name || 'Unknown'}<br>
           <strong>Raw Content:</strong>
-          <div style="margin-top: 5px; max-height: 100px; overflow-y: auto; font-size: 0.9rem;">
+          <div style="margin-top: 5px; max-height: 120px; overflow-y: auto; font-size: 0.9rem;">
             ${entry.content || 'No content available'}
           </div>
         </div>
@@ -816,21 +863,9 @@ Content would normally come from the actual RSS feed parsing.`,
         if (result.success) {
           const aiResponse = result.response;
           
-          // Update statistics
-          testStats.totalTests++;
-          testStats.successfulTests++;
-          testStats.totalResponseTime += responseTime;
-          updateTestStats();
-          
           // Display AI response
           document.getElementById('ai-response').textContent = aiResponse;
           updateAIStatus('success');
-          
-          // Update response stats
-          document.getElementById('response-length').textContent = aiResponse.length;
-          document.getElementById('response-time').textContent = responseTime + 'ms';
-          document.getElementById('prompt-parts').textContent = sections.length;
-          document.getElementById('response-stats').classList.remove('hidden');
 
           // Create Discord preview
           const discordPreview = formatForDiscord(aiResponse, entry);
@@ -849,8 +884,6 @@ Content would normally come from the actual RSS feed parsing.`,
 
       } catch (error) {
         console.error('❌ Test failed:', error);
-        testStats.totalTests++;
-        updateTestStats();
         
         updateAIStatus('error');
         updateDiscordStatus('error');
@@ -1020,19 +1053,6 @@ Content would normally come from the actual RSS feed parsing.`,
     function updateDiscordStatus(status) {
       const indicator = document.getElementById('discord-status');
       indicator.className = `status-indicator status-${status}`;
-    }
-
-    // Update test statistics
-    function updateTestStats() {
-      document.getElementById('total-tests').textContent = testStats.totalTests;
-      document.getElementById('success-rate').textContent = 
-        testStats.totalTests > 0 ? Math.round((testStats.successfulTests / testStats.totalTests) * 100) + '%' : '0%';
-      document.getElementById('avg-response-time').textContent = 
-        testStats.successfulTests > 0 ? Math.round(testStats.totalResponseTime / testStats.successfulTests) + 'ms' : '0ms';
-      
-      if (testStats.totalTests > 0) {
-        document.getElementById('test-results').classList.remove('hidden');
-      }
     }
 
     // Show status message
