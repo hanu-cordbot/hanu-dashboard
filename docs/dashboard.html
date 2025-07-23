@@ -161,6 +161,7 @@
   <script type="module">
     import HanuAuth from './shared/auth.js';
     import HanuAPI from './shared/api.js';
+    import Analytics from './shared/analytics.js';
 
     // Dashboard state
     let feeds = [];
@@ -570,6 +571,35 @@
       const url = input.value.trim();
       
       if (!url) {
+        Analytics.trackDashboardAction('add_feed_failed', { reason: 'empty_url' });
+        showAlert('Please enter a feed URL', 'warning');
+        return;
+      }
+
+      Analytics.trackDashboardAction('add_feed_attempt');
+      const startTime = Date.now();
+
+      try {
+        await HanuAPI.addFeed(url);
+        
+        Analytics.trackAPICall('/api/feeds', Date.now() - startTime, true);
+        Analytics.trackDashboardAction('add_feed_success', { url: url.includes('facebook') ? 'facebook' : 'other' });
+        
+        input.value = '';
+        await loadAllData();
+        showAlert('Feed added successfully! 🎉', 'success');
+      } catch (error) {
+        Analytics.trackAPICall('/api/feeds', Date.now() - startTime, false);
+        Analytics.trackDashboardAction('add_feed_failed', { reason: 'api_error' });
+        Analytics.trackError(error, 'add_feed');
+        showAlert('Failed to add feed: ' + error.message, 'danger');
+      }
+    };
+
+      const input = document.getElementById('new-feed-url');
+      const url = input.value.trim();
+      
+      if (!url) {
         showAlert('Please enter a feed URL', 'warning');
         return;
       }
@@ -840,7 +870,7 @@
         alertDiv.remove();
       }, 5000);
     }
-
+    
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
       if (statsInterval) clearInterval(statsInterval);
@@ -855,6 +885,21 @@
         cancelRenameGroup();
       }
     });
+
+        // Track all button clicks automatically
+    document.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON' || e.target.classList.contains('btn')) {
+        Analytics.trackClick(e.target);
+      }
+    });
+
+    // Track form submissions
+    document.addEventListener('submit', (e) => {
+      Analytics.trackEvent('form_submit', 'interaction', {
+        form: e.target.id || 'unknown'
+      });
+    });
+    
   </script>
 </body>
 </html>
