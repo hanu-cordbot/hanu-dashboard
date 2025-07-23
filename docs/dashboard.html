@@ -117,10 +117,10 @@
       <div class="section">
         <h2>💬 Discord Channels</h2>
         <div class="form-group mb-15">
-          <input type="text" id="new-channel-id" placeholder="Discord Channel ID">
+          <input type="text" id="new-channel-id" placeholder="Discord Channel ID (e.g., 1393802593704083486)">
           <button onclick="addChannel()" class="btn btn-primary">➕ Add Channel</button>
           <small style="display: block; margin-top: 5px; color: #6c757d;">
-            💡 Real channel names will be fetched automatically when the bot runs
+            💡 Channel names will be automatically updated when bot runs
           </small>
         </div>
         
@@ -363,11 +363,11 @@
       container.innerHTML = html;
     }
 
-    // Render grouped feed list
+    // FIXED: Render grouped feed list with empty groups
     function renderGroupedFeeds(feedList) {
       const container = document.getElementById('feeds-container');
       
-      // Group feeds
+      // Group feeds by their assigned groups
       const groupedFeeds = {};
       feedList.forEach(feed => {
         const group = getGroup(feed) || 'Ungrouped';
@@ -375,8 +375,17 @@
         groupedFeeds[group].push(feed);
       });
 
+      // FIXED: Add empty groups that exist but have no feeds
+      Object.keys(groups).forEach(groupName => {
+        if (!groupedFeeds[groupName]) {
+          groupedFeeds[groupName] = [];
+        }
+      });
+
       let html = '';
       Object.entries(groupedFeeds).forEach(([groupName, groupFeeds]) => {
+        const isEmpty = groupFeeds.length === 0;
+        
         html += `
           <div class="card mb-20">
             <div class="card-header flex-between">
@@ -387,28 +396,31 @@
               </div>
             </div>
             <div class="group-feeds" id="group-${groupName}">
-              <table class="feeds-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Last Post</th>
-                    <th>Channel</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${groupFeeds.map(feed => `
+              ${isEmpty ? 
+                '<div style="padding: 20px; text-align: center; color: #666; font-style: italic;">📭 No feeds in this group yet</div>' : 
+                `<table class="feeds-table">
+                  <thead>
                     <tr>
-                      <td>${getTitle(feed)}</td>
-                      <td>${formatDate(getLastPost(feed))}</td>
-                      <td>${getChannelName(feed)}</td>
-                      <td>
-                        <button onclick="removeFeed('${feed.url}')" class="btn btn-danger" style="font-size: 12px;">🗑️</button>
-                      </td>
+                      <th>Name</th>
+                      <th>Last Post</th>
+                      <th>Channel</th>
+                      <th>Actions</th>
                     </tr>
-                  `).join('')}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    ${groupFeeds.map(feed => `
+                      <tr>
+                        <td>${getTitle(feed)}</td>
+                        <td>${formatDate(getLastPost(feed))}</td>
+                        <td>${getChannelName(feed)}</td>
+                        <td>
+                          <button onclick="removeFeed('${feed.url}')" class="btn btn-danger" style="font-size: 12px;">🗑️</button>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>`
+              }
             </div>
           </div>
         `;
@@ -610,6 +622,7 @@
       }
     };
 
+    // FIXED: Group removal with proper URL encoding
     window.removeGroup = async function(groupName) {
       if (!confirm(`Remove group "${groupName}"? Feeds will become ungrouped.`)) return;
 
@@ -618,6 +631,7 @@
         await loadAllData();
         showAlert('Group removed successfully', 'success');
       } catch (error) {
+        console.error('Group removal error:', error);
         showAlert('Failed to remove group: ' + error.message, 'danger');
       }
     };
@@ -629,7 +643,7 @@
       }
     };
 
-    // Channel management
+    // FIXED: Channel management with auto-refresh
     window.addChannel = async function() {
       const idInput = document.getElementById('new-channel-id');
       const channelId = idInput.value.trim();
@@ -646,10 +660,14 @@
       }
 
       try {
+        // Add channel
         await HanuAPI.addChannel(channelId);
         idInput.value = '';
+        
+        // FIXED: Immediately refresh data to show the new channel
         await loadAllData();
-        showAlert('Channel added! Real name will be fetched when bot runs. 💬', 'success');
+        showAlert('Channel added! Name will be updated when bot runs. 💬', 'success');
+        
       } catch (error) {
         showAlert('Failed to add channel: ' + error.message, 'danger');
       }
@@ -668,7 +686,7 @@
       }
     };
 
-    // Bot controls
+    // FIXED: Bot controls with proper result display
     window.runBot = async function() {
       const button = document.getElementById('run-bot-btn');
       const output = document.getElementById('job-output');
@@ -680,11 +698,12 @@
 
       try {
         const result = await HanuAPI.runBot();
+        
+        // FIXED: Handle object result properly
         const resultText = typeof result === 'object' ? 
           `Status: ${result.success ? 'Success' : 'Failed'}\nMessage: ${result.result || result.error || 'No details'}` : 
           result;
         output.textContent = `✅ Bot job completed!\n\n${resultText}`;
-
         
         // Refresh data after successful run to show updated channel names
         setTimeout(async () => {
