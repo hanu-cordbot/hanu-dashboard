@@ -788,24 +788,35 @@
       button.disabled = true;
       button.innerHTML = '<span class="loading-spinner"></span> Running...';
       output.classList.remove('hidden');
-      output.textContent = '⏳ Starting bot job...\n💡 This will also sync real Discord channel names!';
+      output.textContent = '⏳ Starting bot job...\n💡 This may take 2-3 minutes to complete.';
 
       try {
-        const result = await HanuAPI.runBot();
+        // Call the Railway endpoint directly
+        const response = await fetch('https://web-production-b0a5.up.railway.app/run', {
+          method: 'POST',
+          headers: {
+            'X-Auth': HanuAuth.getToken(), // Use your auth token
+            'Content-Type': 'application/json'
+          }
+        });
         
-        const resultText = typeof result === 'object' ? 
-          `Status: ${result.success ? 'Success' : 'Failed'}\nMessage: ${result.result || result.error || 'No details'}` : 
-          result;
-        output.textContent = `✅ Bot job completed!\n\n${resultText}`;
+        const result = await response.json();
         
-        // Refresh data after successful run
-        setTimeout(async () => {
-          await loadAllData();
-          showAlert('📱 Channel names have been synced from Discord!', 'info');
-        }, 2000);
+        if (result.success) {
+          output.textContent = `✅ Bot job completed successfully!\n\nDetails: ${JSON.stringify(result.result || result.message, null, 2)}`;
+          
+          // Refresh data after successful run
+          setTimeout(async () => {
+            await loadAllData();
+            showAlert('📱 Data refreshed after bot run!', 'info');
+          }, 2000);
+        } else {
+          output.textContent = `❌ Bot job failed!\n\nError: ${result.error || result.message}`;
+        }
         
       } catch (error) {
-        output.textContent = `❌ Bot job failed: ${error.message}`;
+        output.textContent = `❌ Failed to trigger bot job: ${error.message}`;
+        console.error('Bot run error:', error);
       } finally {
         button.disabled = false;
         button.innerHTML = '🚀 Run Bot Now';

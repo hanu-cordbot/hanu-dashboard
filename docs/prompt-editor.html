@@ -5,167 +5,21 @@
   <title>HANU Prompt Editor</title>
   <link href="shared/common.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
-    .test-config {
-      background: #f8f9fa;
-      border: 1px solid #dee2e6;
-      border-radius: 8px;
-      padding: 20px;
-      margin: 15px 0;
-    }
-    
-    .test-config h4 {
-      margin: 0 0 15px 0;
-      color: #495057;
-      border-bottom: 1px solid #dee2e6;
-      padding-bottom: 8px;
-    }
-    
-    .config-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-    }
-    
-    .config-section {
-      background: white;
-      padding: 15px;
-      border-radius: 6px;
-      border: 1px solid #e9ecef;
-    }
-    
-    .config-section h5 {
-      margin: 0 0 10px 0;
-      color: #6c757d;
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .feed-channel-selector {
-      max-height: 120px;
-      overflow-y: auto;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
-      padding: 8px;
-      background: #fafafa;
-    }
-    
-    .feed-channel-item {
-      display: flex;
-      align-items: center;
-      padding: 4px 0;
-      font-size: 13px;
-    }
-    
-    .feed-channel-item input[type="checkbox"] {
-      margin-right: 8px;
-    }
-    
-    .feed-channel-item label {
-      flex: 1;
-      cursor: pointer;
-      color: #495057;
-    }
-    
-    .test-results-grid {
-      display: grid;
-      gap: 15px;
-      margin-top: 20px;
-    }
-    
-    .test-result-item {
-      background: #f8f9fa;
-      border: 1px solid #dee2e6;
-      border-radius: 6px;
-      padding: 15px;
-    }
-    
-    .test-result-item.success {
-      border-left: 4px solid #28a745;
-    }
-    
-    .test-result-item.error {
-      border-left: 4px solid #dc3545;
-    }
-    
-    .test-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      font-size: 13px;
-      color: #6c757d;
-    }
-    
-    .test-content {
-      background: white;
-      padding: 12px;
-      border-radius: 4px;
-      margin: 10px 0;
-      white-space: pre-wrap;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      line-height: 1.4;
-    }
-    
-    .config-controls {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    
-    .slider-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .slider-container input[type="range"] {
-      flex: 1;
-      min-width: 100px;
-    }
-    
-    .slider-value {
-      min-width: 30px;
-      text-align: center;
-      font-weight: 600;
-      color: #495057;
-    }
-    
-    .quick-select {
-      display: flex;
-      gap: 5px;
-      margin-top: 8px;
-    }
-    
-    .quick-select button {
-      padding: 4px 8px;
-      font-size: 11px;
-      border: 1px solid #dee2e6;
-      background: #f8f9fa;
-      color: #495057;
-      border-radius: 3px;
-      cursor: pointer;
-    }
-    
-    .quick-select button:hover {
-      background: #e9ecef;
-    }
-    
-    .test-progress {
-      background: #e9ecef;
-      border-radius: 4px;
-      overflow: hidden;
-      margin: 10px 0;
-    }
-    
-    .test-progress-bar {
-      background: #007bff;
-      height: 6px;
-      transition: width 0.3s ease;
-    }
+    .editor-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: 80vh; }
+    .editor-panel { display: flex; flex-direction: column; }
+    .editor-textarea { flex: 1; min-height: 200px; font-family: 'Courier New', monospace; font-size: 14px; }
+    .preview-panel { background: #f8f9fa; padding: 15px; border-radius: 6px; overflow-y: auto; }
+    .test-controls { background: #e9ecef; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+    .prompt-section { background: white; border: 1px solid #dee2e6; border-radius: 6px; margin-bottom: 15px; }
+    .prompt-header { background: #f8f9fa; padding: 10px 15px; border-bottom: 1px solid #dee2e6; font-weight: 600; }
+    .prompt-content { padding: 15px; }
+    .test-entry { background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 10px; margin: 10px 0; }
+    .ai-response { background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; padding: 15px; margin: 10px 0; white-space: pre-wrap; }
+    .discord-preview { background: #36393f; color: #dcddde; padding: 15px; border-radius: 6px; font-family: Whitney, "Helvetica Neue", Helvetica, Arial, sans-serif; }
+    .message-content { background: #40444b; padding: 10px; border-radius: 4px; margin: 5px 0; }
+    .loading-dots { animation: loading 1.5s infinite; }
+    @keyframes loading { 0%, 80%, 100% { opacity: 0.6; } 40% { opacity: 1; } }
   </style>
 </head>
 <body>
@@ -176,13 +30,12 @@
       <a href="dashboard.html">🤖 Dashboard</a>
       <a href="prompt-editor.html" class="active">✏️ Prompt Editor</a>
       <a href="stats.html">📊 Statistics</a>
-      <a href="analytics.html">📈 Analytics</a>
     </div>
 
     <!-- Header -->
     <div class="header">
-      <h1>✏️ System Prompt Editor</h1>
-      <p>Configure AI system prompts that control how the bot processes RSS feeds</p>
+      <h1>✏️ Prompt Editor & Tester</h1>
+      <p>Edit AI prompts and test Discord posting with real RSS entries</p>
     </div>
 
     <!-- Authentication -->
@@ -190,198 +43,134 @@
       <h3>🔐 Authentication Required</h3>
       <input type="password" id="auth-token" placeholder="Enter AUTH_TOKEN">
       <button id="login-button">Login</button>
-      <div id="auth-status" style="margin-top: 10px;"></div>
     </div>
 
     <!-- Main Content -->
     <div id="main-content" class="hidden">
-      <!-- Current Prompt Status -->
-      <div class="status-grid">
-        <div class="status-card">
-          <strong>📝 Prompt Sections</strong>
-          <div class="status-value" id="sections-count">0</div>
-        </div>
-        <div class="status-card">
-          <strong>📊 Total Length</strong>
-          <div class="status-value" id="total-length">0</div>
-        </div>
-        <div class="status-card">
-          <strong>💾 Last Saved</strong>
-          <div class="status-value" id="last-saved">Never</div>
-        </div>
-      </div>
-
-      <!-- Prompt Sections -->
-      <div class="section">
-        <div class="flex-between mb-20">
-          <h2>📋 Prompt Sections</h2>
-          <div>
-            <button onclick="addSection()" class="btn btn-primary">➕ Add Section</button>
-            <button onclick="savePrompt()" class="btn btn-success" id="save-btn">💾 Save Prompt</button>
+      <!-- Test Controls -->
+      <div class="test-controls">
+        <h3>🧪 Testing Controls</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Feed to Test:</label>
+            <select id="test-feed" onchange="loadFeedEntries()">
+              <option value="">Select a feed...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Recent Entry:</label>
+            <select id="test-entry">
+              <option value="">Select an entry...</option>
+            </select>
           </div>
         </div>
-
-        <div id="sections-container">
-          <div class="loading">Loading prompt sections...</div>
-        </div>
-      </div>
-
-      <!-- Basic Prompt Testing -->
-      <div class="section">
-        <h2>🧪 Basic Prompt Testing</h2>
-        <p>Test your prompt with manual RSS feed content</p>
         
-        <div class="form-group mb-15">
-          <textarea id="test-content" rows="6" placeholder="Paste sample RSS feed content here for testing...">
-Tiêu đề: CLB Thanh niên vận động hiến máu thông báo
-Nội dung: Thông báo đến các bạn sinh viên về chương trình hiến máu nhân đạo sẽ được tổ chức vào ngày 25/7/2025 tại hội trường A1. Mời các bạn tham gia ủng hộ hoạt động ý nghĩa này.
-Link: https://www.facebook.com/doimauhanu/posts/1298142858987694
-Ngày đăng: 2025-07-21T08:00:00
-          </textarea>
-        </div>
-
-        <div class="flex gap-15 mb-15">
-          <button onclick="testPrompt()" class="btn btn-primary" id="test-btn">🚀 Test with AI</button>
-          <button onclick="clearTest()" class="btn btn-secondary">🗑️ Clear</button>
-          <button onclick="loadSampleContent()" class="btn btn-outline">📄 Load Sample</button>
-        </div>
-
-        <div id="test-results"></div>
-      </div>
-
-      <!-- Advanced Random Testing -->
-      <div class="section">
-        <h2>🎲 Advanced Random Testing</h2>
-        <p>Test your prompt with random feeds and channels from your actual system</p>
-        
-        <div class="test-config">
-          <h4>🔧 Test Configuration</h4>
-          
-          <div class="config-grid">
-            <!-- Test Parameters -->
-            <div class="config-section">
-              <h5>📊 Test Parameters</h5>
-              
-              <div class="form-group">
-                <label>Number of Tests:</label>
-                <div class="slider-container">
-                  <input type="range" id="post-count" min="1" max="10" value="3" oninput="updateSliderValue('post-count', 'post-count-value')">
-                  <span class="slider-value" id="post-count-value">3</span>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label>
-                  <input type="checkbox" id="include-media"> Include Media Content
-                </label>
-              </div>
-              
-              <div class="form-group">
-                <label>Test Type:</label>
-                <select id="test-type" class="w-full">
-                  <option value="random">Random Selection</option>
-                  <option value="recent">Recent Posts Only</option>
-                  <option value="popular">Popular Feeds Only</option>
-                  <option value="mixed">Mixed Strategy</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Feed Selection -->
-            <div class="config-section">
-              <h5>📰 Feed Pool</h5>
-              
-              <div class="quick-select">
-                <button onclick="selectAllFeeds()">All</button>
-                <button onclick="selectActiveFeeds()">Active Only</button>
-                <button onclick="selectMappedFeeds()">Mapped Only</button>
-                <button onclick="clearFeedSelection()">None</button>
-              </div>
-              
-              <div class="feed-channel-selector" id="feed-selector">
-                <div class="loading">Loading feeds...</div>
-              </div>
-              
-              <small class="text-muted">
-                <span id="selected-feeds-count">0</span> feeds selected
-              </small>
-            </div>
-
-            <!-- Channel Selection -->
-            <div class="config-section">
-              <h5>📺 Channel Pool</h5>
-              
-              <div class="quick-select">
-                <button onclick="selectAllChannels()">All</button>
-                <button onclick="selectTextChannels()">Text Only</button>
-                <button onclick="selectForumChannels()">Forum Only</button>
-                <button onclick="clearChannelSelection()">None</button>
-              </div>
-              
-              <div class="feed-channel-selector" id="channel-selector">
-                <div class="loading">Loading channels...</div>
-              </div>
-              
-              <small class="text-muted">
-                <span id="selected-channels-count">0</span> channels selected
-              </small>
-            </div>
-
-            <!-- Exclusions -->
-            <div class="config-section">
-              <h5>🚫 Exclusions</h5>
-              
-              <div class="form-group">
-                <label>Exclude Feeds:</label>
-                <div class="feed-channel-selector" id="exclude-feeds-selector">
-                  <div class="loading">Loading feeds...</div>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label>Exclude Channels:</label>
-                <div class="feed-channel-selector" id="exclude-channels-selector">
-                  <div class="loading">Loading channels...</div>
-                </div>
-              </div>
-            </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Target Channel:</label>
+            <select id="target-channel">
+              <option value="">Select channel...</option>
+            </select>
           </div>
-
-          <!-- Test Controls -->
-          <div class="config-controls mt-20">
-            <button onclick="runRandomTests()" class="btn btn-primary" id="random-test-btn">
-              🎲 Run Random Tests
-            </button>
-            <button onclick="clearRandomResults()" class="btn btn-secondary">
-              🗑️ Clear Results
-            </button>
-            <button onclick="saveTestConfig()" class="btn btn-outline">
-              💾 Save Config
-            </button>
-            <button onclick="loadTestConfig()" class="btn btn-outline">
-              📂 Load Config
-            </button>
-          </div>
-          
-          <div id="test-progress" class="test-progress" style="display: none;">
-            <div id="test-progress-bar" class="test-progress-bar"></div>
+          <div class="form-group">
+            <label>Test Mode:</label>
+            <select id="test-mode">
+              <option value="preview">Preview Only</option>
+              <option value="discord">Send to Discord</option>
+            </select>
           </div>
         </div>
-
-        <!-- Random Test Results -->
-        <div id="random-test-results"></div>
-      </div>
-
-      <!-- Prompt Templates -->
-      <div class="section">
-        <h2>📚 Prompt Templates</h2>
-        <p>Quick-start templates for different use cases</p>
         
         <div class="flex gap-15">
-          <button onclick="loadTemplate('vietnamese')" class="btn btn-outline">🇻🇳 Vietnamese University</button>
-          <button onclick="loadTemplate('general')" class="btn btn-outline">🌐 General RSS Bot</button>
-          <button onclick="loadTemplate('minimal')" class="btn btn-outline">⚡ Minimal</button>
-          <button onclick="loadTemplate('detailed')" class="btn btn-outline">📖 Detailed</button>
+          <button onclick="testPrompt()" class="btn btn-primary" id="test-btn">🧪 Test Prompt</button>
+          <button onclick="loadPrompt()" class="btn btn-secondary">📥 Load Current</button>
+          <button onclick="savePrompt()" class="btn btn-success">💾 Save Prompt</button>
+          <button onclick="resetPrompt()" class="btn btn-outline">🔄 Reset</button>
+        </div>
+      </div>
+
+      <!-- Editor Container -->
+      <div class="editor-container">
+        <!-- Left Panel: Prompt Editor -->
+        <div class="editor-panel">
+          <h3>📝 Prompt Configuration</h3>
+          
+          <div class="prompt-section">
+            <div class="prompt-header">
+              🤖 System Role
+              <button onclick="toggleSection('system')" class="btn btn-outline" style="float: right; font-size: 12px;">▼</button>
+            </div>
+            <div class="prompt-content" id="system-content">
+              <textarea class="editor-textarea" id="system-prompt" placeholder="Define the AI's role and behavior...">You are a text formatter for HANU University. Transform RSS feed content into engaging Discord posts in Vietnamese.</textarea>
+            </div>
+          </div>
+
+          <div class="prompt-section">
+            <div class="prompt-header">
+              🎨 Formatting Rules
+              <button onclick="toggleSection('formatting')" class="btn btn-outline" style="float: right; font-size: 12px;">▼</button>
+            </div>
+            <div class="prompt-content" id="formatting-content">
+              <textarea class="editor-textarea" id="formatting-prompt" placeholder="Define formatting rules...">**FORMATTING RULES:**
+- Use `**bold**` for main headings
+- Use `*italics*` for emphasis  
+- Use `> ` for blockquotes
+- Preserve all original emojis
+- Remove hashtag walls but keep links
+- Wrap links with &lt;&gt;</textarea>
+            </div>
+          </div>
+
+          <div class="prompt-section">
+            <div class="prompt-header">
+              📋 Output Template
+              <button onclick="toggleSection('template')" class="btn btn-outline" style="float: right; font-size: 12px;">▼</button>
+            </div>
+            <div class="prompt-content" id="template-content">
+              <textarea class="editor-textarea" id="template-prompt" placeholder="Define output structure...">&lt;MARKDOWN_FORMATTED_BODY&gt;
+
+-# tl;dr:
+-# &lt;summary sentence 1&gt;
+-# &lt;summary sentence 2&gt;</textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel: Preview & Testing -->
+        <div class="editor-panel">
+          <h3>👁️ Preview & Testing</h3>
+          
+          <!-- Test Entry Display -->
+          <div class="prompt-section">
+            <div class="prompt-header">📰 Test Entry</div>
+            <div class="prompt-content">
+              <div id="test-entry-display" class="test-entry">
+                Select a feed and entry to test with...
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Response -->
+          <div class="prompt-section">
+            <div class="prompt-header">🤖 AI Response</div>
+            <div class="prompt-content">
+              <div id="ai-response" class="ai-response">
+                Click "Test Prompt" to see AI-generated response...
+              </div>
+            </div>
+          </div>
+
+          <!-- Discord Preview -->
+          <div class="prompt-section">
+            <div class="prompt-header">💬 Discord Preview</div>
+            <div class="prompt-content">
+              <div id="discord-preview" class="discord-preview">
+                <div class="message-content">
+                  AI response will be previewed here as it would appear in Discord...
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -392,730 +181,308 @@ Ngày đăng: 2025-07-21T08:00:00
     import HanuAuth from './shared/auth.js';
     import HanuAPI from './shared/api.js';
 
-    let sections = [];
-    let lastSavedTime = null;
-    let availableFeeds = [];
-    let availableChannels = [];
-    let testConfig = {
-      feedPool: [],
-      channelPool: [],
-      excludeFeeds: [],
-      excludeChannels: [],
-      postCount: 3,
-      includeMedia: false,
-      testType: 'random'
-    };
+    let feeds = [];
+    let channels = [];
+    let currentEntries = [];
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
       HanuAuth.setupAuthUI();
       
       HanuAuth.onLogin(async () => {
-        await loadPrompt();
-        await loadFeedsAndChannels();
-        loadTestConfig();
+        await loadData();
       });
-      
-      twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
       
       if (HanuAuth.isAuthenticated()) {
         const isValid = await HanuAuth.testAuth();
         if (isValid) {
           document.getElementById('auth-section').classList.add('hidden');
           document.getElementById('main-content').classList.remove('hidden');
-          await loadPrompt();
-          await loadFeedsAndChannels();
-          loadTestConfig();
+          await loadData();
         }
       }
+      
+      twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
     });
 
-    // Load feeds and channels for random testing
-    async function loadFeedsAndChannels() {
+    // Load feeds and channels
+    async function loadData() {
       try {
         const [feedsData, channelsData] = await Promise.all([
           HanuAPI.getFeeds(),
           HanuAPI.getChannels()
         ]);
-        
-        availableFeeds = feedsData.feeds || [];
-        availableChannels = channelsData.channels || [];
-        
-        renderFeedChannelSelectors();
-        updateSelectionCounts();
-        
+
+        feeds = feedsData.feeds || [];
+        channels = channelsData.channels || [];
+
+        // Populate feed dropdown
+        const feedSelect = document.getElementById('test-feed');
+        feedSelect.innerHTML = '<option value="">Select a feed...</option>';
+        feeds.forEach(feed => {
+          const title = feedsData.metadata?.[feed.url]?.title || feed.url.substring(0, 50) + '...';
+          feedSelect.innerHTML += `<option value="${feed.url}">${title}</option>`;
+        });
+
+        // Populate channel dropdown
+        const channelSelect = document.getElementById('target-channel');
+        channelSelect.innerHTML = '<option value="">Select channel...</option>';
+        channels.forEach(channel => {
+          const emoji = channel.type === 'forum' ? '💬' : (channel.type === 'voice' ? '🔊' : '📝');
+          channelSelect.innerHTML += `<option value="${channel.id}">${emoji} ${channel.name}</option>`;
+        });
+
       } catch (error) {
-        console.error('Failed to load feeds/channels:', error);
-        showAlert('Failed to load feeds and channels for testing', 'warning');
+        console.error('Failed to load data:', error);
+        showAlert('Failed to load data: ' + error.message, 'danger');
       }
     }
 
-    // Render feed and channel selectors
-    function renderFeedChannelSelectors() {
-      // Main feed selector
-      const feedSelector = document.getElementById('feed-selector');
-      let feedHtml = '';
-      availableFeeds.forEach(feed => {
-        const checked = testConfig.feedPool.includes(feed.url) ? 'checked' : '';
-        feedHtml += `
-          <div class="feed-channel-item">
-            <input type="checkbox" id="feed-${feed.url}" ${checked} 
-                   onchange="toggleFeedSelection('${feed.url}')">
-            <label for="feed-${feed.url}">${feed.title}</label>
-          </div>
-        `;
-      });
-      feedSelector.innerHTML = feedHtml || '<div class="text-muted">No feeds available</div>';
+    // Load entries for selected feed
+    window.loadFeedEntries = async function() {
+      const feedUrl = document.getElementById('test-feed').value;
+      if (!feedUrl) return;
 
-      // Main channel selector
-      const channelSelector = document.getElementById('channel-selector');
-      let channelHtml = '';
-      availableChannels.forEach(channel => {
-        const checked = testConfig.channelPool.includes(channel.id) ? 'checked' : '';
-        const emoji = channel.type === 'forum' ? '💬' : (channel.type === 'voice' ? '🔊' : '📝');
-        channelHtml += `
-          <div class="feed-channel-item">
-            <input type="checkbox" id="channel-${channel.id}" ${checked} 
-                   onchange="toggleChannelSelection('${channel.id}')">
-            <label for="channel-${channel.id}">${emoji} ${channel.name}</label>
-          </div>
-        `;
-      });
-      channelSelector.innerHTML = channelHtml || '<div class="text-muted">No channels available</div>';
+      try {
+        showAlert('Loading recent entries...', 'info');
+        
+        // Call your RSS parser or use a test endpoint
+        const response = await fetch(`https://web-production-b0a5.up.railway.app/test-entries?feed=${encodeURIComponent(feedUrl)}`, {
+          headers: { 'X-Auth': HanuAuth.getToken() }
+        });
+        
+        const entries = await response.json();
+        currentEntries = entries.slice(0, 10); // Last 10 entries
 
-      // Exclude feeds selector
-      const excludeFeedsSelector = document.getElementById('exclude-feeds-selector');
-      let excludeFeedHtml = '';
-      availableFeeds.forEach(feed => {
-        const checked = testConfig.excludeFeeds.includes(feed.url) ? 'checked' : '';
-        excludeFeedHtml += `
-          <div class="feed-channel-item">
-            <input type="checkbox" id="exclude-feed-${feed.url}" ${checked} 
-                   onchange="toggleExcludeFeed('${feed.url}')">
-            <label for="exclude-feed-${feed.url}">${feed.title}</label>
-          </div>
-        `;
-      });
-      excludeFeedsSelector.innerHTML = excludeFeedHtml || '<div class="text-muted">No feeds to exclude</div>';
+        const entrySelect = document.getElementById('test-entry');
+        entrySelect.innerHTML = '<option value="">Select an entry...</option>';
+        
+        currentEntries.forEach((entry, index) => {
+          const title = entry.title?.substring(0, 50) + '...' || `Entry ${index + 1}`;
+          entrySelect.innerHTML += `<option value="${index}">${title}</option>`;
+        });
 
-      // Exclude channels selector
-      const excludeChannelsSelector = document.getElementById('exclude-channels-selector');
-      let excludeChannelHtml = '';
-      availableChannels.forEach(channel => {
-        const checked = testConfig.excludeChannels.includes(channel.id) ? 'checked' : '';
-        const emoji = channel.type === 'forum' ? '💬' : (channel.type === 'voice' ? '🔊' : '📝');
-        excludeChannelHtml += `
-          <div class="feed-channel-item">
-            <input type="checkbox" id="exclude-channel-${channel.id}" ${checked} 
-                   onchange="toggleExcludeChannel('${channel.id}')">
-            <label for="exclude-channel-${channel.id}">${emoji} ${channel.name}</label>
-          </div>
-        `;
-      });
-      excludeChannelsSelector.innerHTML = excludeChannelHtml || '<div class="text-muted">No channels to exclude</div>';
-    }
-
-    // Toggle selections
-    window.toggleFeedSelection = function(feedUrl) {
-      const index = testConfig.feedPool.indexOf(feedUrl);
-      if (index > -1) {
-        testConfig.feedPool.splice(index, 1);
-      } else {
-        testConfig.feedPool.push(feedUrl);
-      }
-      updateSelectionCounts();
-    };
-
-    window.toggleChannelSelection = function(channelId) {
-      const index = testConfig.channelPool.indexOf(channelId);
-      if (index > -1) {
-        testConfig.channelPool.splice(index, 1);
-      } else {
-        testConfig.channelPool.push(channelId);
-      }
-      updateSelectionCounts();
-    };
-
-    window.toggleExcludeFeed = function(feedUrl) {
-      const index = testConfig.excludeFeeds.indexOf(feedUrl);
-      if (index > -1) {
-        testConfig.excludeFeeds.splice(index, 1);
-      } else {
-        testConfig.excludeFeeds.push(feedUrl);
+      } catch (error) {
+        console.error('Failed to load entries:', error);
+        showAlert('Failed to load entries. Using mock data.', 'warning');
+        
+        // Fallback to mock data
+        currentEntries = [{
+          title: 'Test Entry from ' + feedUrl.split('/')[2],
+          content: 'This is a sample RSS entry for testing purposes. It contains some text that would normally come from the RSS feed.',
+          link: feedUrl,
+          published: new Date().toISOString()
+        }];
+        
+        document.getElementById('test-entry').innerHTML = 
+          '<option value="">Select an entry...</option><option value="0">Sample Test Entry</option>';
       }
     };
 
-    window.toggleExcludeChannel = function(channelId) {
-      const index = testConfig.excludeChannels.indexOf(channelId);
-      if (index > -1) {
-        testConfig.excludeChannels.splice(index, 1);
-      } else {
-        testConfig.excludeChannels.push(channelId);
-      }
-    };
-
-    // Quick selection functions
-    window.selectAllFeeds = function() {
-      testConfig.feedPool = availableFeeds.map(f => f.url);
-      renderFeedChannelSelectors();
-      updateSelectionCounts();
-    };
-
-    window.selectActiveFeeds = function() {
-      const activeFeeds = availableFeeds.filter(f => f.lastPost && 
-        (Date.now() - new Date(f.lastPost)) < (14 * 24 * 60 * 60 * 1000));
-      testConfig.feedPool = activeFeeds.map(f => f.url);
-      renderFeedChannelSelectors();
-      updateSelectionCounts();
-    };
-
-    window.selectMappedFeeds = function() {
-      // This would need mapping data - simplified for now
-      testConfig.feedPool = availableFeeds.slice(0, Math.ceil(availableFeeds.length / 2)).map(f => f.url);
-      renderFeedChannelSelectors();
-      updateSelectionCounts();
-    };
-
-    window.clearFeedSelection = function() {
-      testConfig.feedPool = [];
-      renderFeedChannelSelectors();
-      updateSelectionCounts();
-    };
-
-    window.selectAllChannels = function() {
-      testConfig.channelPool = availableChannels.map(c => c.id);
-      renderFeedChannelSelectors();
-      updateSelectionCounts();
-    };
-
-    window.selectTextChannels = function() {
-      const textChannels = availableChannels.filter(c => c.type === 'text');
-      testConfig.channelPool = textChannels.map(c => c.id);
-      renderFeedChannelSelectors();
-      updateSelectionCounts();
-    };
-
-    window.selectForumChannels = function() {
-      const forumChannels = availableChannels.filter(c => c.type === 'forum');
-      testConfig.channelPool = forumChannels.map(c => c.id);
-      renderFeedChannelSelectors();
-      updateSelectionCounts();
-    };
-
-    window.clearChannelSelection = function() {
-      testConfig.channelPool = [];
-      renderFeedChannelSelectors();
-      updateSelectionCounts();
-    };
-
-    // Update selection counts
-    function updateSelectionCounts() {
-      document.getElementById('selected-feeds-count').textContent = testConfig.feedPool.length;
-      document.getElementById('selected-channels-count').textContent = testConfig.channelPool.length;
-    }
-
-    // Update slider values
-    window.updateSliderValue = function(sliderId, valueId) {
-      const slider = document.getElementById(sliderId);
-      const valueSpan = document.getElementById(valueId);
-      valueSpan.textContent = slider.value;
+    // Test the prompt with selected entry
+    window.testPrompt = async function() {
+      const entryIndex = document.getElementById('test-entry').value;
+      const channelId = document.getElementById('target-channel').value;
+      const testMode = document.getElementById('test-mode').value;
       
-      if (sliderId === 'post-count') {
-        testConfig.postCount = parseInt(slider.value);
-      }
-    };
-
-    // Run random tests
-    window.runRandomTests = async function() {
-      const button = document.getElementById('random-test-btn');
-      const progressContainer = document.getElementById('test-progress');
-      const progressBar = document.getElementById('test-progress-bar');
-      const resultsContainer = document.getElementById('random-test-results');
-
-      // Update config from UI
-      testConfig.postCount = parseInt(document.getElementById('post-count').value);
-      testConfig.includeMedia = document.getElementById('include-media').checked;
-      testConfig.testType = document.getElementById('test-type').value;
-
-      // Validation
-      if (testConfig.feedPool.length === 0 || testConfig.channelPool.length === 0) {
-        showAlert('Please select at least one feed and one channel for testing', 'warning');
+      if (!entryIndex || !channelId) {
+        showAlert('Please select both an entry and a target channel', 'warning');
         return;
       }
 
+      const entry = currentEntries[parseInt(entryIndex)];
+      const button = document.getElementById('test-btn');
+      
       button.disabled = true;
-      button.innerHTML = '<span class="loading-spinner"></span> Running Tests...';
-      progressContainer.style.display = 'block';
-      progressBar.style.width = '0%';
+      button.innerHTML = '<span class="loading-dots">🧪 Testing...</span>';
 
       try {
-        // Show initial progress
-        progressBar.style.width = '10%';
-        
-        resultsContainer.innerHTML = `
-          <div class="test-result-item">
-            <h3>🎲 Initializing Random Tests...</h3>
-            <p>Configuration: ${testConfig.postCount} tests, ${testConfig.feedPool.length} feeds, ${testConfig.channelPool.length} channels</p>
-          </div>
+        // Display the test entry
+        document.getElementById('test-entry-display').innerHTML = `
+          <h4>${entry.title}</h4>
+          <p>${entry.content || 'No content preview available'}</p>
+          <small>Published: ${new Date(entry.published).toLocaleString()}</small>
         `;
 
-        // Call the API
-        const response = await HanuAPI.testRandomPrompt(testConfig);
-        progressBar.style.width = '100%';
-
-        // Display results
-        displayRandomTestResults(response);
+        // Build the prompt
+        const systemPrompt = document.getElementById('system-prompt').value;
+        const formattingPrompt = document.getElementById('formatting-prompt').value;
+        const templatePrompt = document.getElementById('template-prompt').value;
         
-        showAlert(`Random testing completed! Generated ${response.results?.length || 0} test cases 🎉`, 'success');
+        const fullPrompt = `${systemPrompt}\n\n${formattingPrompt}\n\n${templatePrompt}\n\nPOST TITLE: ${entry.title}\nPOST BODY:\n${entry.content}`;
+
+        // Test with Gemini API
+        const aiResponse = await testWithGemini(fullPrompt);
+        
+        // Display AI response
+        document.getElementById('ai-response').textContent = aiResponse;
+
+        // Create Discord preview
+        const discordPreview = formatForDiscord(aiResponse);
+        document.getElementById('discord-preview').innerHTML = discordPreview;
+
+        // If test mode is Discord, actually send it
+        if (testMode === 'discord') {
+          await sendToDiscord(channelId, entry, aiResponse);
+        }
 
       } catch (error) {
-        console.error('Random test failed:', error);
-        resultsContainer.innerHTML = `
-          <div class="test-result-item error">
-            <h3>❌ Random Test Failed</h3>
-            <p style="color: #dc3545;">${error.message}</p>
-          </div>
-        `;
-        showAlert('Random testing failed: ' + error.message, 'danger');
+        console.error('Test failed:', error);
+        showAlert('Test failed: ' + error.message, 'danger');
+        document.getElementById('ai-response').textContent = 'Error: ' + error.message;
       } finally {
         button.disabled = false;
-        button.innerHTML = '🎲 Run Random Tests';
-        setTimeout(() => {
-          progressContainer.style.display = 'none';
-        }, 1000);
+        button.innerHTML = '🧪 Test Prompt';
       }
     };
 
-    // Display random test results
-    function displayRandomTestResults(response) {
-      const resultsContainer = document.getElementById('random-test-results');
-      
-      if (!response.results || response.results.length === 0) {
-        resultsContainer.innerHTML = `
-          <div class="test-result-item">
-            <h3>⚠️ No Test Results</h3>
-            <p>No test cases were generated. Check your configuration.</p>
-          </div>
-        `;
-        return;
-      }
+    // Test with Gemini API
+    async function testWithGemini(prompt) {
+      try {
+        const response = await fetch(`https://web-production-b0a5.up.railway.app/test-gemini`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth': HanuAuth.getToken()
+          },
+          body: JSON.stringify({ prompt })
+        });
 
-      let html = `
-        <div class="test-result-item success">
-          <h3>🎉 Random Test Results</h3>
-          <div class="test-meta">
-            <span>Tests: ${response.results.length}</span>
-            <span>Available Feeds: ${response.available?.feeds || 0}</span>
-            <span>Available Channels: ${response.available?.channels || 0}</span>
-            <span>Generated: ${new Date().toLocaleString()}</span>
-          </div>
-        </div>
+        const result = await response.json();
         
-        <div class="test-results-grid">
-      `;
-
-      response.results.forEach((result, index) => {
-        const statusClass = result.status === 'success' ? 'success' : 'error';
-        html += `
-          <div class="test-result-item ${statusClass}">
-            <div class="test-meta">
-              <span><strong>Test ${index + 1}</strong></span>
-              <span>Feed: ${result.feed_url?.split('/').pop() || 'Unknown'}</span>
-              <span>Channel: #${result.channel_name || 'Unknown'}</span>
-              ${result.processing_time ? `<span>Time: ${result.processing_time}ms</span>` : ''}
-            </div>
-            
-            <h4>${result.title}</h4>
-            
-            ${result.status === 'success' ? `
-              <div class="test-content">${result.ai_response || 'No AI response'}</div>
-            ` : `
-              <div style="color: #dc3545; padding: 10px;">
-                <strong>Error:</strong> ${result.error || 'Unknown error'}
-              </div>
-            `}
-            
-            <details style="margin-top: 10px;">
-              <summary style="cursor: pointer; color: #6c757d;">Show Test Data</summary>
-              <div class="test-content" style="margin-top: 8px; font-size: 12px;">
-                <strong>Original Content:</strong><br>
-                ${result.content}
-                <br><br>
-                <strong>Configuration:</strong><br>
-                Channel Type: ${result.channel_name} (${result.channel_id})<br>
-                Has Media: ${result.has_media ? 'Yes' : 'No'}<br>
-                Timestamp: ${result.timestamp}
-              </div>
-            </details>
-          </div>
-        `;
-      });
-
-      html += '</div>';
-      resultsContainer.innerHTML = html;
-      twemoji.parse(resultsContainer, { folder: 'svg', ext: '.svg' });
-    }
-
-    // Clear random results
-    window.clearRandomResults = function() {
-      document.getElementById('random-test-results').innerHTML = '';
-    };
-
-    // Save/Load test configuration
-    window.saveTestConfig = function() {
-      try {
-        localStorage.setItem('hanu-test-config', JSON.stringify(testConfig));
-        showAlert('Test configuration saved! 💾', 'success');
-      } catch (error) {
-        showAlert('Failed to save configuration', 'warning');
-      }
-    };
-
-    window.loadTestConfig = function() {
-      try {
-        const saved = localStorage.getItem('hanu-test-config');
-        if (saved) {
-          testConfig = { ...testConfig, ...JSON.parse(saved) };
-          
-          // Update UI
-          document.getElementById('post-count').value = testConfig.postCount;
-          document.getElementById('post-count-value').textContent = testConfig.postCount;
-          document.getElementById('include-media').checked = testConfig.includeMedia;
-          document.getElementById('test-type').value = testConfig.testType;
-          
-          renderFeedChannelSelectors();
-          updateSelectionCounts();
-          showAlert('Test configuration loaded! 📂', 'success');
+        if (result.success) {
+          return result.response;
         } else {
-          showAlert('No saved configuration found', 'info');
+          throw new Error(result.error || 'Gemini API failed');
         }
       } catch (error) {
-        showAlert('Failed to load configuration', 'warning');
-      }
-    };
+        // Fallback response
+        return `**🤖 AI Response (Fallback)**
 
-    // Load current prompt
-    async function loadPrompt() {
+This is a formatted response for the test entry. The actual AI would process the content and return a properly formatted Discord message.
+
+-# tl;dr:
+-# This is a test summary
+-# Generated from the prompt editor`;
+      }
+    }
+
+    // Format AI response for Discord preview
+    function formatForDiscord(response) {
+      // Convert markdown to Discord-style preview
+      let formatted = response
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/^-# (.*$)/gim, '<small style="color: #72767d;">$1</small>');
+
+      return `
+        <div class="message-content">
+          <div style="color: #00b0f4; font-weight: 600; margin-bottom: 5px;">HANU Bot</div>
+          <div style="white-space: pre-wrap;">${formatted}</div>
+        </div>
+      `;
+    }
+
+    // Send to actual Discord channel
+    async function sendToDiscord(channelId, entry, aiResponse) {
       try {
-        const data = await HanuAPI.getSystemPrompt();
-        sections = data.sections || getDefaultSections();
-        renderSections();
-        updateStats();
+        showAlert('Sending to Discord...', 'info');
+        
+        const response = await fetch(`https://web-production-b0a5.up.railway.app/test-discord`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth': HanuAuth.getToken()
+          },
+          body: JSON.stringify({
+            channel_id: channelId,
+            content: aiResponse,
+            entry: entry
+          })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          showAlert('✅ Message sent to Discord successfully!', 'success');
+        } else {
+          throw new Error(result.error || 'Failed to send to Discord');
+        }
       } catch (error) {
-        console.error('Failed to load prompt:', error);
-        sections = getDefaultSections();
-        renderSections();
-        updateStats();
-        showAlert('Failed to load prompt: ' + error.message, 'warning');
+        console.error('Discord send failed:', error);
+        showAlert('Failed to send to Discord: ' + error.message, 'danger');
       }
     }
 
-    // Get default sections
-    function getDefaultSections() {
-      return [
-        {
-          name: "System Role",
-          content: "Bạn là trợ lý tin tức của trường Đại học Hà Nội. Nhiệm vụ của bạn là xử lý nội dung RSS feed và tạo tóm tắt hấp dẫn cho các bài đăng Discord."
-        },
-        {
-          name: "Output Format", 
-          content: "Định dạng phản hồi của bạn như sau:\n\n**📝 Tóm tắt**: Tóm tắt ngắn gọn bằng tiếng Việt (1-2 câu)\n**📋 Chi tiết**: Thông tin chi tiết và quan trọng\n**👥 Liên quan**: Thông tin liên quan đến sinh viên HANU\n**🔗 Nguồn**: Link bài viết gốc"
-        },
-        {
-          name: "Content Guidelines",
-          content: "- Sử dụng tiếng Việt tự nhiên và dễ hiểu\n- Tập trung vào thông tin hữu ích cho sinh viên\n- Làm nổi bật các thông tin quan trọng như thời gian, địa điểm\n- Giữ tone tích cực và chuyên nghiệp\n- Tránh thông tin không chính xác hoặc cảm tính"
+    // Load current prompt from system
+    window.loadPrompt = async function() {
+      try {
+        const prompt = await HanuAPI.getSystemPrompt();
+        
+        if (prompt.sections && prompt.sections.length > 0) {
+          prompt.sections.forEach(section => {
+            const name = section.name.toLowerCase();
+            if (name.includes('system') || name.includes('role')) {
+              document.getElementById('system-prompt').value = section.content;
+            } else if (name.includes('format')) {
+              document.getElementById('formatting-prompt').value = section.content;
+            } else if (name.includes('template') || name.includes('output')) {
+              document.getElementById('template-prompt').value = section.content;
+            }
+          });
+          
+          showAlert('Current prompt loaded!', 'success');
         }
-      ];
-    }
-
-    // Render sections
-    function renderSections() {
-      const container = document.getElementById('sections-container');
-      
-      if (sections.length === 0) {
-        container.innerHTML = '<div class="loading">No sections configured</div>';
-        return;
-      }
-
-      let html = '';
-      sections.forEach((section, index) => {
-        html += `
-          <div class="prompt-section" data-index="${index}">
-            <div class="prompt-header">
-              <input 
-                type="text" 
-                value="${section.name}" 
-                onchange="updateSectionName(${index}, this.value)"
-                placeholder="Section name"
-                class="w-full"
-                style="font-weight: 600; font-size: 16px; border: none; background: transparent;"
-              >
-              <div>
-                <button onclick="moveSection(${index}, -1)" class="btn btn-outline" ${index === 0 ? 'disabled' : ''}>⬆️</button>
-                <button onclick="moveSection(${index}, 1)" class="btn btn-outline" ${index === sections.length - 1 ? 'disabled' : ''}>⬇️</button>
-                <button onclick="removeSection(${index})" class="btn btn-danger">🗑️</button>
-              </div>
-            </div>
-            
-            <div class="form-group">
-              <textarea 
-                rows="6" 
-                placeholder="Enter section content (supports Markdown)"
-                onchange="updateSectionContent(${index}, this.value)"
-                oninput="updatePreview(${index}); updateStats()"
-              >${section.content}</textarea>
-            </div>
-            
-            <div class="prompt-preview" id="preview-${index}">
-              ${marked.parse(section.content || '')}
-            </div>
-          </div>
-        `;
-      });
-
-      container.innerHTML = html;
-      
-      // Update all previews
-      sections.forEach((_, index) => updatePreview(index));
-      twemoji.parse(container, { folder: 'svg', ext: '.svg' });
-    }
-
-    // Update section name
-    window.updateSectionName = function(index, name) {
-      if (sections[index]) {
-        sections[index].name = name;
-        updateStats();
+      } catch (error) {
+        showAlert('Failed to load current prompt: ' + error.message, 'warning');
       }
     };
 
-    // Update section content
-    window.updateSectionContent = function(index, content) {
-      if (sections[index]) {
-        sections[index].content = content;
-        updateStats();
-      }
-    };
-
-    // Update preview
-    window.updatePreview = function(index) {
-      const preview = document.getElementById(`preview-${index}`);
-      const section = sections[index];
-      
-      if (preview && section) {
-        try {
-          preview.innerHTML = marked.parse(section.content || '');
-          twemoji.parse(preview, { folder: 'svg', ext: '.svg' });
-        } catch (error) {
-          preview.innerHTML = '<em>Markdown preview error</em>';
-        }
-      }
-    };
-
-    // Add section
-    window.addSection = function() {
-      sections.push({
-        name: `Section ${sections.length + 1}`,
-        content: "Enter your prompt content here..."
-      });
-      renderSections();
-      updateStats();
-    };
-
-    // Remove section
-    window.removeSection = function(index) {
-      if (sections.length > 1 && confirm('Remove this section?')) {
-        sections.splice(index, 1);
-        renderSections();
-        updateStats();
-      } else if (sections.length === 1) {
-        showAlert('Cannot remove the last section', 'warning');
-      }
-    };
-
-    // Move section
-    window.moveSection = function(index, direction) {
-      const newIndex = index + direction;
-      if (newIndex >= 0 && newIndex < sections.length) {
-        [sections[index], sections[newIndex]] = [sections[newIndex], sections[index]];
-        renderSections();
-        updateStats();
-      }
-    };
-
-    // Save prompt
+    // Save prompt to system
     window.savePrompt = async function() {
-      const saveBtn = document.getElementById('save-btn');
-      
-      if (sections.length === 0) {
-        showAlert('Cannot save empty prompt', 'warning');
-        return;
-      }
-
-      saveBtn.disabled = true;
-      saveBtn.innerHTML = '<span class="loading-spinner"></span> Saving...';
-
       try {
-        await HanuAPI.updateSystemPrompt(sections);
-        lastSavedTime = new Date();
-        updateStats();
-        showAlert('System prompt saved successfully! 🎉', 'success');
+        const sections = [
+          {
+            name: 'System Role',
+            content: document.getElementById('system-prompt').value
+          },
+          {
+            name: 'Formatting Rules', 
+            content: document.getElementById('formatting-prompt').value
+          },
+          {
+            name: 'Output Template',
+            content: document.getElementById('template-prompt').value
+          }
+        ];
+
+        await HanuAPI.updateSystemPrompt({ sections });
+        showAlert('Prompt saved successfully! 💾', 'success');
       } catch (error) {
         showAlert('Failed to save prompt: ' + error.message, 'danger');
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '💾 Save Prompt';
       }
     };
 
-    // Test prompt
-    window.testPrompt = async function() {
-      const testBtn = document.getElementById('test-btn');
-      const content = document.getElementById('test-content').value.trim();
-      const resultsDiv = document.getElementById('test-results');
-
-      if (!content) {
-        showAlert('Please enter test content', 'warning');
-        return;
-      }
-
-      testBtn.disabled = true;
-      testBtn.innerHTML = '<span class="loading-spinner"></span> Testing...';
+    // Reset to default prompt
+    window.resetPrompt = function() {
+      if (!confirm('Reset to default prompt? This will lose current changes.')) return;
       
-      resultsDiv.innerHTML = `
-        <div class="test-result">
-          <h3>🧪 Testing Prompt...</h3>
-          <p>Sending test content to AI with current prompt configuration...</p>
-        </div>
-      `;
-
-      try {
-        const response = await HanuAPI.testPrompt(content);
-        
-        resultsDiv.innerHTML = `
-          <div class="test-result">
-            <h3>🤖 AI Response</h3>
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 10px 0; white-space: pre-wrap;">${response.result || 'No response received'}</div>
-            <small style="color: #666;">Generated: ${new Date().toLocaleString()} | Test completed successfully</small>
-          </div>
-        `;
-        
-        twemoji.parse(resultsDiv, { folder: 'svg', ext: '.svg' });
-
-      } catch (error) {
-        resultsDiv.innerHTML = `
-          <div class="test-result">
-            <h3>❌ Test Failed</h3>
-            <p style="color: #dc3545;">${error.message}</p>
-            <small style="color: #666;">Make sure your prompt is saved and the AI service is available</small>
-          </div>
-        `;
-      } finally {
-        testBtn.disabled = false;
-        testBtn.innerHTML = '🚀 Test with AI';
-      }
+      document.getElementById('system-prompt').value = 'You are a text formatter for HANU University. Transform RSS feed content into engaging Discord posts in Vietnamese.';
+      document.getElementById('formatting-prompt').value = '**FORMATTING RULES:**\n- Use `**bold**` for main headings\n- Use `*italics*` for emphasis\n- Use `> ` for blockquotes\n- Preserve all original emojis\n- Remove hashtag walls but keep links\n- Wrap links with <>';
+      document.getElementById('template-prompt').value = '<MARKDOWN_FORMATTED_BODY>\n\n-# tl;dr:\n-# <summary sentence 1>\n-# <summary sentence 2>';
+      
+      showAlert('Prompt reset to defaults', 'info');
     };
 
-    // Clear test
-    window.clearTest = function() {
-      document.getElementById('test-content').value = '';
-      document.getElementById('test-results').innerHTML = '';
+    // Toggle section visibility
+    window.toggleSection = function(sectionId) {
+      const content = document.getElementById(`${sectionId}-content`);
+      const isHidden = content.style.display === 'none';
+      content.style.display = isHidden ? 'block' : 'none';
+      
+      const button = content.previousElementSibling.querySelector('button');
+      button.textContent = isHidden ? '▼' : '▶';
     };
-
-    // Load sample content
-    window.loadSampleContent = function() {
-      const samples = [
-        {
-          title: "Sample University Event",
-          content: `Tiêu đề: Hội thảo Khoa học Sinh viên năm 2025
-Nội dung: Khoa Công nghệ Thông tin - Trường Đại học Hà Nội tổ chức Hội thảo Khoa học Sinh viên với chủ đề "AI và Tương lai". Thời gian: 9:00 ngày 30/7/2025 tại Hội trường B1. Sinh viên quan tâm đăng ký tại văn phòng khoa.
-Link: https://www.facebook.com/khoacntt.hanu/posts/847604707367028
-Ngày đăng: 2025-07-21T10:30:00`
-        },
-        {
-          title: "Sample Club Activity",
-          content: `Tiêu đề: CLB Guitar HANU - Buổi biểu diễn cuối kỳ
-Nội dung: CLB Guitar HANU xin thông báo buổi biểu diễn âm nhạc cuối kỳ sẽ diễn ra vào 19:00 thứ 6 ngày 26/7/2025 tại sân khấu ngoài trời. Chương trình có sự tham gia của các thành viên CLB với nhiều tiết mục hấp dẫn. Sinh viên toàn trường được mời tham dự miễn phí.
-Link: https://www.facebook.com/Hanuguitar/posts/1140180748143664
-Ngày đăng: 2025-07-21T14:15:00`
-        }
-      ];
-      
-      const randomSample = samples[Math.floor(Math.random() * samples.length)];
-      document.getElementById('test-content').value = randomSample.content;
-    };
-
-    // Load templates
-    window.loadTemplate = function(templateType) {
-      if (!confirm('This will replace your current prompt. Continue?')) return;
-
-      const templates = {
-        vietnamese: [
-          {
-            name: "System Role - Vietnamese University",
-            content: "Bạn là trợ lý thông minh chuyên xử lý tin tức của trường Đại học Hà Nội. Bạn có khả năng đọc hiểu và tóm tắt nội dung RSS feed từ các trang Facebook của trường và các câu lạc bộ sinh viên."
-          },
-          {
-            name: "Output Format - Discord Optimized",
-            content: "Định dạng phản hồi cho Discord:\n\n**📢 THÔNG BÁO**\n**📝 Tóm tắt**: [Tóm tắt ngắn gọn 1-2 câu]\n**📋 Chi tiết**: [Thông tin chi tiết quan trọng]\n**📅 Thời gian**: [Nếu có thông tin về thời gian]\n**📍 Địa điểm**: [Nếu có thông tin về địa điểm]\n**👥 Đối tượng**: [Ai nên quan tâm]\n**🔗 Chi tiết**: [Link gốc]"
-          }
-        ],
-        general: [
-          {
-            name: "System Role - General RSS Bot",
-            content: "You are an intelligent RSS feed processor. Your task is to analyze RSS content and create engaging summaries for social media posting."
-          },
-          {
-            name: "Output Guidelines",
-            content: "Format your response as:\n\n**Summary**: Brief overview in 1-2 sentences\n**Details**: Important information and context\n**Action**: What users should do (if applicable)\n**Source**: Original link"
-          }
-        ],
-        minimal: [
-          {
-            name: "Simple Processing",
-            content: "Create a brief, engaging summary of the RSS content. Keep it concise and highlight the most important information. Use appropriate emojis and format for social media."
-          }
-        ],
-        detailed: [
-          {
-            name: "Comprehensive Analysis",
-            content: "You are an advanced content processor with expertise in:\n1. Content analysis and summarization\n2. Audience targeting\n3. Social media optimization\n4. Information prioritization\n\nProvide detailed analysis of RSS content including context, relevance, and actionable insights."
-          },
-          {
-            name: "Output Structure",
-            content: "Provide output in the following structure:\n\n**Executive Summary**: Key points in bullet format\n**Detailed Analysis**: Comprehensive breakdown\n**Target Audience**: Who should care about this\n**Recommended Actions**: What users should do\n**Context**: Background information\n**Source Attribution**: Proper crediting"
-          }
-        ]
-      };
-
-      if (templates[templateType]) {
-        sections = templates[templateType];
-        renderSections();
-        updateStats();
-        showAlert(`${templateType.charAt(0).toUpperCase() + templateType.slice(1)} template loaded! 📚`, 'success');
-      }
-    };
-
-    // Update statistics
-    function updateStats() {
-      document.getElementById('sections-count').textContent = sections.length;
-      
-      const totalLength = sections.reduce((sum, section) => sum + (section.content || '').length, 0);
-      document.getElementById('total-length').textContent = totalLength.toLocaleString();
-      
-      document.getElementById('last-saved').textContent = lastSavedTime ? 
-        formatDate(lastSavedTime) : 'Never';
-    }
-
-    // Format date helper
-    function formatDate(date) {
-      const now = new Date();
-      const diffMinutes = Math.floor((now - date) / (1000 * 60));
-      
-      if (diffMinutes < 1) return 'Just now';
-      if (diffMinutes < 60) return `${diffMinutes}m ago`;
-      if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`;
-      return date.toLocaleDateString();
-    }
 
     // Alert helper
     function showAlert(message, type = 'info') {
@@ -1130,9 +497,7 @@ Ngày đăng: 2025-07-21T14:15:00`
       
       document.body.appendChild(alertDiv);
       
-      setTimeout(() => {
-        alertDiv.remove();
-      }, 5000);
+      setTimeout(() => alertDiv.remove(), 5000);
     }
   </script>
 </body>
