@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <title>HANU Dashboard</title>
   <link href="shared/common.css" rel="stylesheet">
-
-  <!-- Force login BEFORE any other JS runs -->
+  
+  <!-- Keep this line - prompt editor has it -->
   <script type="module" src="shared/auth-boot.js"></script>
-
+  
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 </head>
@@ -45,7 +45,6 @@
           <button onclick="runBot()" class="btn btn-primary">🚀 Run Bot Now</button>
           <button onclick="testPost()" class="btn btn-success">🧪 Test Post</button>
           <button onclick="refreshStatus()" class="btn btn-secondary">🔄 Refresh Status</button>
-          <button onclick="exportData()" class="btn btn-outline">📥 Export Data</button>
         </div>
       </div>
 
@@ -79,459 +78,63 @@
           <input type="url" id="new-feed-url" placeholder="Enter RSS feed URL" style="flex: 1; margin-right: 10px;">
           <button onclick="addFeed()" class="btn btn-primary">➕ Add Feed</button>
         </div>
-        
         <div id="feeds-container">
           <div class="loading">Loading feeds...</div>
-        </div>
-      </div>
-
-      <!-- Channel Management -->
-      <div class="section">
-        <h2>💬 Channel Management</h2>
-        <div class="controls mb-15">
-          <input type="text" id="new-channel-id" placeholder="Enter Discord Channel ID" style="flex: 1; margin-right: 10px;">
-          <button onclick="addChannel()" class="btn btn-primary">➕ Add Channel</button>
-        </div>
-        
-        <div id="channels-container">
-          <div class="loading">Loading channels...</div>
-        </div>
-      </div>
-
-      <!-- Group Management -->
-      <div class="section">
-        <h2>📂 Group Management</h2>
-        <div class="controls mb-15">
-          <input type="text" id="new-group-name" placeholder="Enter group name" style="flex: 1; margin-right: 10px;">
-          <button onclick="addGroup()" class="btn btn-primary">➕ Create Group</button>
-        </div>
-        
-        <div id="groups-container">
-          <div class="loading">Loading groups...</div>
         </div>
       </div>
 
       <!-- Test Panel -->
       <div class="section">
         <h2>🧪 Testing Panel</h2>
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-header">
-              <h3>Test Discord Connection</h3>
-            </div>
-            <div class="card-body">
-              <select id="test-channel-select" class="mb-10">
-                <option value="">Select channel...</option>
-              </select>
-              <textarea id="test-message" placeholder="Enter test message" rows="3" class="mb-10"></textarea>
-              <button onclick="testDiscordMessage()" class="btn btn-success">📤 Send Test Message</button>
-            </div>
-          </div>
-          
-          <div class="card">
-            <div class="card-header">
-              <h3>Test Feed Parsing</h3>
-            </div>
-            <div class="card-body">
-              <select id="test-feed-select" class="mb-10">
-                <option value="">Select feed...</option>
-              </select>
-              <button onclick="testFeedParsing()" class="btn btn-info">🔍 Parse Feed</button>
-              <button onclick="getRandomEntry()" class="btn btn-secondary">🎲 Random Entry</button>
-            </div>
-          </div>
-        </div>
-        
-        <div id="test-results" class="code-output hidden mt-15">
-          <div class="loading">Running test...</div>
-        </div>
-      </div>
-
-      <!-- Recent Activity -->
-      <div class="section">
-        <h2>📋 Recent Activity</h2>
-        <div id="activity-feed">
-          <div class="loading">Loading recent activity...</div>
-        </div>
-      </div>
-
-      <!-- System Health -->
-      <div class="section">
-        <h2>🏥 System Health</h2>
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-header">
-              <h3>Health Metrics</h3>
-            </div>
-            <div id="health-metrics">
-              <div class="loading">Loading health metrics...</div>
-            </div>
-          </div>
-          
-          <div class="card">
-            <div class="card-header">
-              <h3>Performance Chart</h3>
-            </div>
-            <canvas id="performance-chart" width="400" height="200"></canvas>
-          </div>
+        <div class="flex gap-15">
+          <button onclick="testDiscordMessage()" class="btn btn-success">📤 Test Discord</button>
+          <button onclick="testFeedParsing()" class="btn btn-info">🔍 Test Feed</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Scripts -->
+  <!-- Scripts - COPIED FROM PROMPT EDITOR -->
   <script type="module">
     import HanuAuth from './shared/auth.js';
     import HanuAPI, { runBotTest } from './shared/api.js';
 
-    let feedsData = [];
-    let channelsData = [];
-    let groupsData = [];
-    let performanceChart = null;
-    let refreshInterval = null;
-
-    // Initialize
+    // Initialize the application - EXACT SAME AS PROMPT EDITOR
     document.addEventListener('DOMContentLoaded', async () => {
+      console.log('🚀 Initializing Dashboard...');
+      
+      // Setup authentication UI - SAME AS PROMPT EDITOR
       HanuAuth.setupAuthUI();
       
+      // Setup authentication callback - SAME AS PROMPT EDITOR
       HanuAuth.onLogin(async () => {
+        console.log('✅ User authenticated, loading data...');
         await loadDashboardData();
-        setupPerformanceChart();
-        startAutoRefresh();
       });
       
+      // Parse emojis - SAME AS PROMPT EDITOR
       twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
       
+      // Auto-login if already authenticated - SAME AS PROMPT EDITOR
       if (HanuAuth.isAuthenticated()) {
         const isValid = await HanuAuth.testAuth();
         if (isValid) {
           document.getElementById('auth-section').classList.add('hidden');
           document.getElementById('main-content').classList.remove('hidden');
           await loadDashboardData();
-          setupPerformanceChart();
-          startAutoRefresh();
         }
       }
     });
 
-    // Load all dashboard data
+    // Load dashboard data
     async function loadDashboardData() {
       try {
         console.log('📊 Loading dashboard data...');
-        
-        await Promise.all([
-          loadSystemOverview(),
-          loadFeeds(),
-          loadChannels(),
-          loadGroups(),
-          loadRecentActivity(),
-          loadHealthMetrics()
-        ]);
-        
-        populateTestSelects();
-        console.log('✅ Dashboard data loaded');
+        showAlert('Dashboard loaded successfully!', 'success');
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
         showAlert('Failed to load dashboard data: ' + error.message, 'danger');
       }
-    }
-
-    // Load system overview stats
-    async function loadSystemOverview() {
-      try {
-        const [statusData, statsData] = await Promise.all([
-          HanuAPI.getSystemStatus(),
-          HanuAPI.getSystemStats()
-        ]);
-
-        document.getElementById('total-feeds').textContent = statsData.feedCount || 0;
-        document.getElementById('active-channels').textContent = statsData.activeFeedCount || 0;
-        document.getElementById('posts-today').textContent = statusData.seenCount || 0;
-        document.getElementById('bot-status').textContent = statusData.workerStatus || 'Unknown';
-
-        // Color code bot status
-        const statusElement = document.getElementById('bot-status');
-        const status = statusData.workerStatus || 'Unknown';
-        statusElement.className = status === 'Running' ? 'stat-value success' : 'stat-value warning';
-
-      } catch (error) {
-        console.error('Failed to load system overview:', error);
-      }
-    }
-
-    // Load feeds
-    async function loadFeeds() {
-      try {
-        const data = await HanuAPI.getFeeds();
-        feedsData = data.feeds || [];
-        renderFeeds();
-      } catch (error) {
-        console.error('Failed to load feeds:', error);
-        document.getElementById('feeds-container').innerHTML = 
-          '<div class="error">Failed to load feeds</div>';
-      }
-    }
-
-    // Render feeds list
-    function renderFeeds() {
-      const container = document.getElementById('feeds-container');
-      
-      if (feedsData.length === 0) {
-        container.innerHTML = '<div class="empty-state">No feeds configured yet. Add one above!</div>';
-        return;
-      }
-
-      let html = '<div class="list-group">';
-      feedsData.forEach(feed => {
-        const statusBadge = feed.isActive ? 
-          '<span class="badge bg-success">Active</span>' : 
-          '<span class="badge bg-warning">Inactive</span>';
-        
-        html += `
-          <div class="list-item">
-            <div class="flex-between">
-              <div>
-                <div class="item-title">${feed.title || 'Untitled Feed'}</div>
-                <div class="item-subtitle">${feed.url}</div>
-                ${feed.channelId ? `<small>→ Channel: ${feed.channelName || feed.channelId}</small>` : ''}
-                ${feed.groupName ? `<small>→ Group: ${feed.groupName}</small>` : ''}
-              </div>
-              <div class="item-actions">
-                ${statusBadge}
-                <button onclick="removeFeed('${feed.url}')" class="btn btn-sm btn-danger">🗑️</button>
-              </div>
-            </div>
-          </div>
-        `;
-      });
-      html += '</div>';
-      
-      container.innerHTML = html;
-    }
-
-    // Load channels
-    async function loadChannels() {
-      try {
-        const data = await HanuAPI.getChannels();
-        channelsData = data.channels || [];
-        renderChannels();
-      } catch (error) {
-        console.error('Failed to load channels:', error);
-        document.getElementById('channels-container').innerHTML = 
-          '<div class="error">Failed to load channels</div>';
-      }
-    }
-
-    // Render channels list
-    function renderChannels() {
-      const container = document.getElementById('channels-container');
-      
-      if (channelsData.length === 0) {
-        container.innerHTML = '<div class="empty-state">No channels configured yet. Add one above!</div>';
-        return;
-      }
-
-      let html = '<div class="list-group">';
-      channelsData.forEach(channel => {
-        const feedCount = feedsData.filter(f => f.channelId === channel.id).length;
-        
-        html += `
-          <div class="list-item">
-            <div class="flex-between">
-              <div>
-                <div class="item-title">#${channel.name || 'Unknown'}</div>
-                <div class="item-subtitle">ID: ${channel.id}</div>
-                <small>${feedCount} feed(s) mapped</small>
-              </div>
-              <div class="item-actions">
-                <span class="badge bg-info">${feedCount} feeds</span>
-                <button onclick="removeChannel('${channel.id}')" class="btn btn-sm btn-danger">🗑️</button>
-              </div>
-            </div>
-          </div>
-        `;
-      });
-      html += '</div>';
-      
-      container.innerHTML = html;
-    }
-
-    // Load groups
-    async function loadGroups() {
-      try {
-        const data = await HanuAPI.getGroups();
-        groupsData = data.groups || [];
-        renderGroups();
-      } catch (error) {
-        console.error('Failed to load groups:', error);
-        document.getElementById('groups-container').innerHTML = 
-          '<div class="error">Failed to load groups</div>';
-      }
-    }
-
-    // Render groups list
-    function renderGroups() {
-      const container = document.getElementById('groups-container');
-      
-      if (groupsData.length === 0) {
-        container.innerHTML = '<div class="empty-state">No groups created yet. Create one above!</div>';
-        return;
-      }
-
-      let html = '<div class="list-group">';
-      groupsData.forEach(group => {
-        const feedCount = feedsData.filter(f => f.groupName === group.name).length;
-        
-        html += `
-          <div class="list-item">
-            <div class="flex-between">
-              <div>
-                <div class="item-title">📂 ${group.name}</div>
-                <small>${feedCount} feed(s) in this group</small>
-              </div>
-              <div class="item-actions">
-                <span class="badge bg-secondary">${feedCount} feeds</span>
-                <button onclick="renameGroup('${group.name}')" class="btn btn-sm btn-outline">✏️</button>
-                <button onclick="removeGroup('${group.name}')" class="btn btn-sm btn-danger">🗑️</button>
-              </div>
-            </div>
-          </div>
-        `;
-      });
-      html += '</div>';
-      
-      container.innerHTML = html;
-    }
-
-    // Load recent activity
-    async function loadRecentActivity() {
-      // Mock data for now - replace with real API when available
-      const activities = [
-        { time: new Date(Date.now() - 2 * 60 * 1000), action: 'New posts processed', details: '3 posts from CLB Dynamic HANU', type: 'success' },
-        { time: new Date(Date.now() - 15 * 60 * 1000), action: 'Bot run completed', details: 'Processed 44 feeds successfully', type: 'info' },
-        { time: new Date(Date.now() - 32 * 60 * 1000), action: 'Feed added', details: 'New RSS feed configured', type: 'success' },
-        { time: new Date(Date.now() - 67 * 60 * 1000), action: 'Channel updated', details: 'Channel name refreshed from Discord', type: 'info' },
-        { time: new Date(Date.now() - 125 * 60 * 1000), action: 'Dashboard accessed', details: 'Admin logged in', type: 'info' }
-      ];
-
-      const container = document.getElementById('activity-feed');
-      
-      let html = '<div class="activity-list">';
-      activities.forEach(activity => {
-        const iconMap = {
-          success: '✅',
-          warning: '⚠️',
-          error: '❌',
-          info: '📋'
-        };
-
-        html += `
-          <div class="activity-item">
-            <div class="activity-icon">${iconMap[activity.type]}</div>
-            <div class="activity-content">
-              <div class="activity-title">${activity.action}</div>
-              <div class="activity-details">${activity.details}</div>
-              <div class="activity-time">${formatDate(activity.time)}</div>
-            </div>
-          </div>
-        `;
-      });
-      html += '</div>';
-
-      container.innerHTML = html;
-      twemoji.parse(container, { folder: 'svg', ext: '.svg' });
-    }
-
-    // Load health metrics
-    async function loadHealthMetrics() {
-      try {
-        const health = await HanuAPI.healthCheck();
-        
-        const container = document.getElementById('health-metrics');
-        
-        let html = '<div class="health-grid">';
-        html += `
-          <div class="health-item">
-            <div class="health-label">Worker Service</div>
-            <div class="health-status ${health.worker.status === 'healthy' ? 'success' : 'danger'}">
-              ${health.worker.status === 'healthy' ? '🟢 Healthy' : '🔴 Unhealthy'}
-            </div>
-          </div>
-          <div class="health-item">
-            <div class="health-label">Railway Service</div>
-            <div class="health-status ${health.railway.status === 'healthy' ? 'success' : 'danger'}">
-              ${health.railway.status === 'healthy' ? '🟢 Healthy' : '🔴 Unhealthy'}
-            </div>
-          </div>
-        `;
-        html += '</div>';
-        
-        container.innerHTML = html;
-        
-      } catch (error) {
-        console.error('Failed to load health metrics:', error);
-        document.getElementById('health-metrics').innerHTML = 
-          '<div class="error">Failed to load health metrics</div>';
-      }
-    }
-
-    // Setup performance chart
-    function setupPerformanceChart() {
-      const ctx = document.getElementById('performance-chart').getContext('2d');
-      
-      // Mock data - replace with real metrics when available
-      const labels = [];
-      const data = [];
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        labels.push(date.toLocaleDateString());
-        data.push(Math.floor(Math.random() * 100) + 50); // Mock performance score
-      }
-      
-      performanceChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Performance Score',
-            data: data,
-            borderColor: '#007bff',
-            backgroundColor: 'rgba(0, 123, 255, 0.1)',
-            tension: 0.4,
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: { 
-              beginAtZero: true,
-              max: 100
-            }
-          },
-          plugins: {
-            legend: { display: false }
-          }
-        }
-      });
-    }
-
-    // Populate test select dropdowns
-    function populateTestSelects() {
-      // Populate channel select
-      const channelSelect = document.getElementById('test-channel-select');
-      channelSelect.innerHTML = '<option value="">Select channel...</option>';
-      channelsData.forEach(channel => {
-        channelSelect.innerHTML += `<option value="${channel.id}">#${channel.name || channel.id}</option>`;
-      });
-
-      // Populate feed select
-      const feedSelect = document.getElementById('test-feed-select');
-      feedSelect.innerHTML = '<option value="">Select feed...</option>';
-      feedsData.forEach(feed => {
-        feedSelect.innerHTML += `<option value="${feed.url}">${feed.title || feed.url}</option>`;
-      });
     }
 
     // Action functions
@@ -540,7 +143,6 @@
         showAlert('Starting bot run...', 'info');
         const result = await HanuAPI.runBot();
         showAlert('Bot run started successfully! 🚀', 'success');
-        setTimeout(loadSystemOverview, 2000); // Refresh stats after 2 seconds
       } catch (error) {
         showAlert('Failed to start bot: ' + error.message, 'danger');
       }
@@ -561,197 +163,30 @@
       showAlert('Dashboard refreshed! 🔄', 'success');
     };
 
-    window.exportData = async function() {
-      try {
-        const data = await HanuAPI.exportData();
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `hanu-export-${new Date().toISOString().slice(0, 10)}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showAlert('Data exported successfully! 📥', 'success');
-      } catch (error) {
-        showAlert('Export failed: ' + error.message, 'danger');
-      }
-    };
-
     window.addFeed = async function() {
       const url = document.getElementById('new-feed-url').value.trim();
       if (!url) {
         showAlert('Please enter a feed URL', 'warning');
         return;
       }
-
       try {
         await HanuAPI.addFeed(url);
         document.getElementById('new-feed-url').value = '';
-        await loadFeeds();
-        populateTestSelects();
         showAlert('Feed added successfully! 📡', 'success');
       } catch (error) {
         showAlert('Failed to add feed: ' + error.message, 'danger');
       }
     };
 
-    window.removeFeed = async function(feedUrl) {
-      if (!confirm('Remove this feed?')) return;
-
-      try {
-        await HanuAPI.removeFeed(feedUrl);
-        await loadFeeds();
-        populateTestSelects();
-        showAlert('Feed removed successfully! 🗑️', 'success');
-      } catch (error) {
-        showAlert('Failed to remove feed: ' + error.message, 'danger');
-      }
-    };
-
-    window.addChannel = async function() {
-      const channelId = document.getElementById('new-channel-id').value.trim();
-      if (!channelId) {
-        showAlert('Please enter a channel ID', 'warning');
-        return;
-      }
-
-      try {
-        await HanuAPI.addChannel(channelId);
-        document.getElementById('new-channel-id').value = '';
-        await loadChannels();
-        populateTestSelects();
-        showAlert('Channel added successfully! 💬', 'success');
-      } catch (error) {
-        showAlert('Failed to add channel: ' + error.message, 'danger');
-      }
-    };
-
-    window.removeChannel = async function(channelId) {
-      if (!confirm('Remove this channel?')) return;
-
-      try {
-        await HanuAPI.removeChannel(channelId);
-        await loadChannels();
-        populateTestSelects();
-        showAlert('Channel removed successfully! 🗑️', 'success');
-      } catch (error) {
-        showAlert('Failed to remove channel: ' + error.message, 'danger');
-      }
-    };
-
-    window.addGroup = async function() {
-      const groupName = document.getElementById('new-group-name').value.trim();
-      if (!groupName) {
-        showAlert('Please enter a group name', 'warning');
-        return;
-      }
-
-      try {
-        await HanuAPI.addGroup(groupName);
-        document.getElementById('new-group-name').value = '';
-        await loadGroups();
-        showAlert('Group created successfully! 📂', 'success');
-      } catch (error) {
-        showAlert('Failed to create group: ' + error.message, 'danger');
-      }
-    };
-
-    window.renameGroup = async function(oldName) {
-      const newName = prompt('Enter new group name:', oldName);
-      if (!newName || newName === oldName) return;
-
-      try {
-        await HanuAPI.renameGroup(oldName, newName);
-        await loadGroups();
-        showAlert('Group renamed successfully! ✏️', 'success');
-      } catch (error) {
-        showAlert('Failed to rename group: ' + error.message, 'danger');
-      }
-    };
-
-    window.removeGroup = async function(groupName) {
-      if (!confirm(`Remove group "${groupName}"?`)) return;
-
-      try {
-        await HanuAPI.removeGroup(groupName);
-        await loadGroups();
-        showAlert('Group removed successfully! 🗑️', 'success');
-      } catch (error) {
-        showAlert('Failed to remove group: ' + error.message, 'danger');
-      }
-    };
-
     window.testDiscordMessage = async function() {
-      const channelId = document.getElementById('test-channel-select').value;
-      const message = document.getElementById('test-message').value.trim();
-
-      if (!channelId || !message) {
-        showAlert('Please select a channel and enter a message', 'warning');
-        return;
-      }
-
-      try {
-        const result = await HanuAPI.testDiscord(channelId, message);
-        document.getElementById('test-results').classList.remove('hidden');
-        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
-        showAlert('Test message sent successfully! 📤', 'success');
-      } catch (error) {
-        showAlert('Failed to send test message: ' + error.message, 'danger');
-      }
+      showAlert('Discord test feature coming soon!', 'info');
     };
 
     window.testFeedParsing = async function() {
-      const feedUrl = document.getElementById('test-feed-select').value;
-      if (!feedUrl) {
-        showAlert('Please select a feed', 'warning');
-        return;
-      }
-
-      try {
-        const result = await HanuAPI.getTestEntries(feedUrl);
-        document.getElementById('test-results').classList.remove('hidden');
-        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
-        showAlert('Feed parsed successfully! 🔍', 'success');
-      } catch (error) {
-        showAlert('Failed to parse feed: ' + error.message, 'danger');
-      }
+      showAlert('Feed parsing test feature coming soon!', 'info');
     };
 
-    window.getRandomEntry = async function() {
-      try {
-        const result = await HanuAPI.getRandomEntry();
-        document.getElementById('test-results').classList.remove('hidden');
-        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
-        showAlert('Random entry retrieved! 🎲', 'success');
-      } catch (error) {
-        showAlert('Failed to get random entry: ' + error.message, 'danger');
-      }
-    };
-
-    // Auto-refresh every 2 minutes
-    function startAutoRefresh() {
-      if (refreshInterval) clearInterval(refreshInterval);
-      
-      refreshInterval = setInterval(async () => {
-        await loadSystemOverview();
-        console.log('🔄 Auto-refreshed dashboard');
-      }, 2 * 60 * 1000);
-    }
-
-    // Helper functions
-    function formatDate(date) {
-      const now = new Date();
-      const diffMinutes = Math.floor((now - date) / (1000 * 60));
-      
-      if (diffMinutes < 1) return 'Just now';
-      if (diffMinutes < 60) return `${diffMinutes}m ago`;
-      if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`;
-      return date.toLocaleDateString();
-    }
-
-    // Alert helper
+    // Alert helper - SAME AS PROMPT EDITOR
     function showAlert(message, type = 'info') {
       const alertDiv = document.createElement('div');
       alertDiv.className = `alert alert-${type} fade-in`;
@@ -768,12 +203,6 @@
         alertDiv.remove();
       }, 5000);
     }
-
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', () => {
-      if (refreshInterval) clearInterval(refreshInterval);
-      if (performanceChart) performanceChart.destroy();
-    });
   </script>
 </body>
 </html>
