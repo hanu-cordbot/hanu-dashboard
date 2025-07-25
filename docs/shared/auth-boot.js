@@ -2,7 +2,16 @@
 import HanuAuth from './auth.js';
 
 /**
- * Wait until the user has logged in before the rest of the page runs.
+ * Wait for DOM load, then block until user logs in.
  * Shows the little “Enter authentication token” banner automatically.
  */
-await HanuAuth.requireLogin();   // blocks until there is a valid token
+async function bootAuth() {
+  // Wait for DOM to be ready
+  if (document.readyState === 'loading') {
+    await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+  }
+  // Now setup auth and require login
+  await HanuAuth.requireLogin();
+}
+
+bootAuth();

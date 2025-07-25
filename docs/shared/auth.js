@@ -160,7 +160,26 @@ class HanuAuth {
     
     return true;
   }
-  
+
+  /**
+   * Blocks execution until the user is authenticated.
+   * Sets up the authentication UI and waits for login.
+   * @param {Object} options - Optional UI element IDs.
+   * @returns {Promise<void>} Resolves when login is successful.
+   */
+  async requireLogin(options = {}) {
+    // Initialize authentication UI
+    this.setupAuthUI(options);
+    // If already authenticated and valid, return immediately
+    if (this.isAuthenticated() && await this.testAuth()) {
+      return;
+    }
+    // Otherwise, wait for the login callback to resolve
+    return new Promise(resolve => {
+      this.onLogin(() => resolve());
+    });
+  }
+
   // Logout user
   logout() {
     console.log('🚪 Logging out...');
