@@ -497,3 +497,18 @@ if (typeof window !== 'undefined') {
 
 // Export for ES6 modules
 export default HanuAPIInstance;
+
+// Export for modules
+export default window.HanuAPI;
+
+export async function runBotTest(authToken, feedUrl = '') {
+  return fetch(`${API_ORIGIN}/run`, {
+    method : 'POST',
+    headers: {
+      'X-Auth'        : authToken,
+      'X-Test-Mode'   : '1',
+      'X-Skip-Filters': '1',
+      'X-Test-Feed'   : feedUrl
+    }
+  });
+}
