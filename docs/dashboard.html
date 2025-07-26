@@ -40,10 +40,8 @@
     <!-- Main Content -->
     <div id="main-content" class="hidden">
       <div class="stat-card">
-            <div class="stat-value" id="bot-status">Offline</div>
-            <div class="stat-label">🤖 Bot Status</div>
-          </div>
-        </div>
+        <div class="stat-value" id="bot-status">Offline</div>
+        <div class="stat-label">🤖 Bot Status</div>
       </div>
 
       <!-- Feed Management -->
@@ -177,7 +175,9 @@
       
       // Handle login success
       HanuAuth.onLogin(async () => {
-        console.log('✅ User authenticated, loading dashboard...');
+        console.log('✅ User authenticated, showing dashboard...');
+        document.getElementById('auth-section').classList.add('hidden');
+        document.getElementById('main-content').classList.remove('hidden');
         await loadDashboardData();
         setupPerformanceChart();
         startAutoRefresh();
