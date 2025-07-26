@@ -156,19 +156,21 @@
     import HanuAuth from './shared/auth.js';
     import HanuAPI, { runBotTest } from './shared/api.js';
 
-    // Ensure dashboard initializes only after DOM ready and authentication
+    // Initialization: wait for DOM and auth, then load dashboard
     document.addEventListener('DOMContentLoaded', async () => {
-      console.log('🔔 DOM loaded, starting auth boot');
+      // Setup auth UI elements
+      HanuAuth.setupAuthUI();
+      // Block until user logs in
       await HanuAuth.requireLogin();
-      console.log('✅ Auth complete, showing dashboard');
+      // Switch UI to main content
       document.getElementById('auth-section').classList.add('hidden');
       document.getElementById('main-content').classList.remove('hidden');
-      console.log('📊 Loading all dashboard data');
+      // Load all data and start refresh
       await loadDashboardData();
       setupPerformanceChart();
       startAutoRefresh();
     });
-
+    
     let feedsData = [];
     let channelsData = [];
     let groupsData = [];
@@ -227,14 +229,14 @@
       try {
         console.log('📊 Loading dashboard data...');
         
-        await Promise.all([
-          loadSystemOverview(),
-          loadFeeds(),
-          loadChannels(),
-          loadGroups(),
-          loadRecentActivity(),
-          loadHealthMetrics()
-        ]);
+        // Load feeds first to ensure visible data
+        await loadFeeds();
+        // Load other data, catching errors individually
+        await loadSystemOverview().catch(err => console.error('Overview load failed:', err));
+        await loadChannels().catch(err => console.error('Channels load failed:', err));
+        await loadGroups().catch(err => console.error('Groups load failed:', err));
+        await loadRecentActivity().catch(err => console.error('Activity load failed:', err));
+        await loadHealthMetrics().catch(err => console.error('Health load failed:', err));
         
         populateTestSelects();
         console.log('✅ Dashboard data loaded');
@@ -272,9 +274,11 @@
       const container = document.getElementById('feeds-container');
       container.innerHTML = '<div class="loading">Loading feeds...</div>';
       try {
-        const response = await fetch('https://hanu-cordbot.snacky496.workers.dev/api/public/feeds');
+      console.log('🔎 Fetching feeds from public API');
+      const response = await fetch('https://hanu-cordbot.snacky496.workers.dev/api/public/feeds');
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
+      console.log('📥 Feeds data received:', data);
         feedsData = data.feeds || [];
         renderFeeds();
       } catch (error) {
