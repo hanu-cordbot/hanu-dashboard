@@ -6,6 +6,12 @@ img.emoji {
   vertical-align: -0.1em; 
 }
 
+/* Center-align standalone sections */
+.section {
+  max-width: 1400px;
+  margin: 0 auto 30px;
+}
+
 /* Base styles */
 body { 
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
