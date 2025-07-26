@@ -27,10 +27,13 @@ class HanuAPI {
 
   // Generic request method with comprehensive error handling
   async request(endpoint, options = {}) {
-    // Determine if this should go to Railway or Cloudflare Worker
-    const isRailwayEndpoint = ['/run', '/health', '/get-current-prompt', '/save-current-prompt', 
-                               '/test-gemini', '/test-entries', '/all-feeds', '/random-entry', '/test-discord'].includes(endpoint);
-    
+    // Determine if this should go to Railway or Cloudflare Worker by matching path without query
+    const pathOnly = endpoint.split('?')[0];
+    const railwayEndpoints = [
+      '/run', '/health', '/get-current-prompt', '/save-current-prompt',
+      '/test-gemini', '/test-entries', '/all-feeds', '/random-entry', '/test-discord'
+    ];
+    const isRailwayEndpoint = railwayEndpoints.includes(pathOnly);
     const baseUrl = isRailwayEndpoint ? this.railwayUrl : this.baseUrl;
     const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
     
