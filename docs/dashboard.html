@@ -137,6 +137,7 @@
               </select>
               <button onclick="testFeedParsing()" class="btn btn-info">🔍 Parse Feed</button>
               <button onclick="getRandomEntry()" class="btn btn-secondary">🎲 Random Entry</button>
+              <button onclick="sendRandomPost()" class="btn btn-primary">🚀 Send Random Post</button>
             </div>
           </div>
         </div>
@@ -907,6 +908,39 @@
         showAlert('Random entry retrieved! 🎲', 'success');
       } catch (error) {
         showAlert('Failed to get random entry: ' + error.message, 'danger');
+      }
+    };
+
+    // Send a random post from a random feed to the selected channel
+    window.sendRandomPost = async function() {
+      const channelId = document.getElementById('test-channel-select').value;
+      if (!channelId) {
+        showAlert('Please select a channel', 'warning');
+        return;
+      }
+      if (feedsData.length === 0) {
+        showAlert('No feeds available to choose from', 'warning');
+        return;
+      }
+      try {
+        // Pick a random feed
+        const feed = feedsData[Math.floor(Math.random() * feedsData.length)];
+        // Get entries for that feed
+        const entries = await HanuAPI.getTestEntries(feed.url);
+        if (!entries || entries.length === 0) {
+          showAlert('No entries found for feed: ' + (feed.title || feed.url), 'warning');
+          return;
+        }
+        // Pick a random entry
+        const entry = entries[Math.floor(Math.random() * entries.length)];
+        // Send the entry content to Discord
+        const message = entry.content || entry.link || entry.title || 'No content';
+        const result = await HanuAPI.testDiscord(channelId, message);
+        document.getElementById('test-results').classList.remove('hidden');
+        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+        showAlert('Random post sent! 🚀', 'success');
+      } catch (error) {
+        showAlert('Failed to send random post: ' + error.message, 'danger');
       }
     };
 
