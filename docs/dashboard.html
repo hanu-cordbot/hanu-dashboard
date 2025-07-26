@@ -9,6 +9,15 @@
     .list-item { padding: 12px 0; border-bottom: 1px solid #e9ecef; }
     .list-item:last-child { border-bottom: none; }
     select.mapping-select { width: 100%; }
+    /* Table layout matching index.html */
+    .feeds-table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
+
+    /* Column width definitions for consistent alignment */
+    .feeds-table col:nth-child(1) { width: 40%; }
+    .feeds-table col:nth-child(2) { width: 10%; }
+    .feeds-table col:nth-child(3) { width: 20%; }
+    .feeds-table col:nth-child(4) { width: 20%; }
+    .feeds-table col:nth-child(5) { width: 10%; }
   </style>
   
 
@@ -347,6 +356,10 @@
         let res = 0;
         if (currentSort === 'name') {
           res = (a.title || a.url).localeCompare(b.title || b.url);
+        } else if (currentSort === 'date') {
+          const dateA = new Date(metadataMap[a.url]?.last_post || 0);
+          const dateB = new Date(metadataMap[b.url]?.last_post || 0);
+          res = dateB - dateA;
         } else if (currentSort === 'channel') {
           const nameA = (channelsData.find(c => c.id == a.channelId)?.name || '');
           const nameB = (channelsData.find(c => c.id == b.channelId)?.name || '');
@@ -365,7 +378,23 @@
 
     function renderFlatView(list) {
       const container = document.getElementById('feeds-container');
-      let html = '<table class="feeds-table"><thead><tr><th>Name</th><th>Status</th><th>Channel</th><th>Group</th><th>Actions</th></tr></thead><tbody>';
+      let html = `<table class="feeds-table">
+        <colgroup>
+          <col style="width:40%">
+          <col style="width:10%">
+          <col style="width:15%">
+          <col style="width:20%">
+          <col style="width:10%">
+          <col style="width:5%">
+        </colgroup>
+        <thead><tr>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Last Post</th>
+          <th>Channel</th>
+          <th>Group</th>
+          <th>Actions</th>
+        </tr></thead><tbody>`;
       list.forEach(feed => {
         const title = feed.title || 'Untitled Feed';
         const url = feed.url;
@@ -374,6 +403,7 @@
           <tr>
             <td><div class="feed-name">${title}</div><div class="feed-url" style="color:#6c757d;font-size:0.9rem;">${url}</div></td>
             <td><span class="status ${isActive ? 'status-active' : 'status-inactive'}">${isActive ? 'Active' : 'Inactive'}</span></td>
+            <td class="feed-date">${formatDate(metadataMap[feed.url]?.last_post)}</td>
             <td><select class="mapping-select" onchange="updateFeedMapping('${feed.url}', this.value)"><option value="">Not mapped</option>${channelsData.map(c => `<option value="${c.id}" ${c.id==feed.channelId?'selected':''}>${c.name||c.id}</option>`).join('')}</select></td>
             <td><select class="mapping-select" onchange="updateFeedGroup('${feed.url}', this.value)"><option value="">No group</option>${groupsData.map(g => `<option value="${g.name}" ${g.name===feed.groupName?'selected':''}>${g.name}</option>`).join('')}</select></td>
             <td><button onclick="removeFeed('${feed.url}')" class="btn btn-sm btn-danger">🗑️</button></td>
@@ -396,13 +426,29 @@
         const feeds = groups[group];
         const id = `group-${group.replace(/\s+/g,'-').toLowerCase()}`;
         const count = feeds.length;
-        html += `
+      html += `
           <div class="group-section">
             <div class="group-header" onclick="toggleGroup('${id}')">
               <span class="group-arrow">▼</span> ${group} <span class="group-count">${count}</span>
             </div>
             <div class="group-content" id="${id}">
-              <table class="feeds-table"><thead><tr><th>Name</th><th>Status</th><th>Channel</th><th>Group</th><th>Actions</th></tr></thead><tbody>`;
+              <table class="feeds-table">
+                <colgroup>
+                  <col style="width:40%">
+                  <col style="width:10%">
+                  <col style="width:15%">
+                  <col style="width:20%">
+                  <col style="width:10%">
+                  <col style="width:5%">
+                </colgroup>
+                <thead><tr>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Last Post</th>
+                  <th>Channel</th>
+                  <th>Group</th>
+                  <th>Actions</th>
+                </tr></thead><tbody>`;
         feeds.forEach(feed => {
           const title = feed.title || 'Untitled Feed';
           const url = feed.url;
