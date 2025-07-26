@@ -39,17 +39,7 @@
 
     <!-- Main Content -->
     <div id="main-content" class="hidden">
-    (async () => {
-      // Parse Discord emojis
-      twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
-      
-      // Load and render dashboard data
-      await loadDashboardData();
-      setupPerformanceChart();
-      startAutoRefresh();
-    })();
-          </div>
-          <div class="stat-card">
+      <div class="stat-card">
             <div class="stat-value" id="bot-status">Offline</div>
             <div class="stat-label">🤖 Bot Status</div>
           </div>
@@ -207,7 +197,7 @@
           startAutoRefresh();
         }
       }
-    });
+    })();
 
     // Load all dashboard data
     async function loadDashboardData() {
