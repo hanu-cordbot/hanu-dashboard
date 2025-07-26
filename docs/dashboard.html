@@ -926,6 +926,8 @@
       try {
         // Trigger proxy service to handle random post
         const feed = feedsData[Math.floor(Math.random() * feedsData.length)];
+        // Temporarily map this feed to the test channel so proxy will post
+        await HanuAPI.updateFeedMapping(feed.url, channelId);
         const result = await runBotTest(HanuAuth.getToken(), feed.url);
         document.getElementById('test-results').classList.remove('hidden');
         document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(await result.json(), null, 2)}</pre>`;
