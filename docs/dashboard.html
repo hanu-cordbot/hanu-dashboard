@@ -244,16 +244,19 @@
       }
     }
 
-    // Load feeds
+    // Load feeds (public feed list)
     async function loadFeeds() {
+      const container = document.getElementById('feeds-container');
+      container.innerHTML = '<div class="loading">Loading feeds...</div>';
       try {
-        const data = await HanuAPI.getFeeds();
+        const response = await fetch('https://hanu-cordbot.snacky496.workers.dev/api/public/feeds');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
         feedsData = data.feeds || [];
         renderFeeds();
       } catch (error) {
         console.error('Failed to load feeds:', error);
-        document.getElementById('feeds-container').innerHTML = 
-          '<div class="error">Failed to load feeds</div>';
+        container.innerHTML = '<div class="error">Failed to load feeds</div>';
       }
     }
 
