@@ -34,7 +34,10 @@ class HanuAPI {
       '/test-gemini', '/test-entries', '/all-feeds', '/random-entry', '/test-discord'
     ];
     // Force /test-entries with query to be routed to Railway as well
-    const isRailwayEndpoint = endpoint.startsWith('/test-entries') || railwayEndpoints.includes(pathOnly);
+    // Determine railway calls by path or full URL
+    const isRailwayEndpoint = endpoint.startsWith(this.railwayUrl)
+      || endpoint.startsWith('/test-entries')
+      || railwayEndpoints.includes(pathOnly);
     const baseUrl = isRailwayEndpoint ? this.railwayUrl : this.baseUrl;
     const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
     
@@ -311,10 +314,22 @@ class HanuAPI {
   }
 
   async getTestEntries(feedUrl = null) {
-    // Explicitly call Railway test-entries endpoint
+    // Explicitly call Railway test-entries endpoint with X-Auth
     const path = feedUrl ? `/test-entries?feed=${encodeURIComponent(feedUrl)}` : '/test-entries';
     const url = `${this.railwayUrl}${path}`;
-    return this.request(url, { method: 'GET' });
+    const token = HanuAuth.getToken();
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Auth': token
+      }
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errText}`);
+    }
+    return await response.json();
   }
 
   async getRandomEntry() {
