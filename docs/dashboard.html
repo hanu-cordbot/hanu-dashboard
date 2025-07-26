@@ -185,10 +185,13 @@
       try {
         console.log('📊 Loading dashboard data...');
         
-        // Load channels and groups before feeds for mapping UI
+        // Load channels before feeds for mapping UI
         await loadChannels().catch(err => console.error('Channels load failed:', err));
+        // Load feeds (private API)
+        await loadFeeds();
+        // Load group definitions for management UI
         await loadGroups().catch(err => console.error('Groups load failed:', err));
-        // Load feeds with channel and group info
+        // Load feeds (private API) and build channel and group UI
         await loadFeeds();
         // Load other data, catching errors individually
         await loadSystemOverview().catch(err => console.error('Overview load failed:', err));
@@ -244,7 +247,7 @@
         mappingsMap = data.mappings || {};
         metadataMap = data.metadata || {};
         groupsMap = data.groups || {};
-        // Merge into feed objects
+        // Build feed list and apply mappings
         feedsData = data.feeds || [];
         feedsData.forEach(feed => {
           // apply channel mapping
@@ -263,9 +266,8 @@
           }
         });
         renderFeeds();
-        // Update channel and group displays after feeds load
+        // Update channel UI and test selects after feeds load
         renderChannels();
-        renderGroups();
         populateTestSelects();
       } catch (error) {
         console.error('Failed to load feeds:', error);
@@ -284,8 +286,9 @@
 
       let html = '<div class="list-group">';
       feedsData.forEach(feed => {
-        const statusBadge = feed.isActive ? 
-          '<span class="badge bg-success">Active</span>' : 
+        // Status badge: active or inactive label
+        const statusBadge = feed.isActive ?
+          '<span class="badge bg-success">Active</span>' :
           '<span class="badge bg-warning">Inactive</span>';
         
         html += `
@@ -342,7 +345,8 @@
 
       let html = '<div class="list-group">';
       channelsData.forEach(channel => {
-        const feedCount = feedsData.filter(f => f.channelId === channel.id).length;
+        // Use loose equality to match string or number IDs
+        const feedCount = feedsData.filter(f => f.channelId == channel.id).length;
         
         html += `
           <div class="list-item">
@@ -365,18 +369,21 @@
       container.innerHTML = html;
     }
 
-    // Load groups
+    // Load groups from the last /api/feeds response mapping
+    // Load groups from last feeds result and render
+    // Load group definitions and render management UI
     async function loadGroups() {
       try {
         const data = await HanuAPI.getGroups();
-        // Accept array or object with groups key
+        // Normalize to array of group names
         const raw = data.groups ?? data;
-        groupsData = Array.isArray(raw) ? raw : Object.values(raw);
+        groupsData = Array.isArray(raw)
+          ? raw.map(name => ({ name }))
+          : Object.keys(raw).map(name => ({ name }));
         renderGroups();
       } catch (error) {
         console.error('Failed to load groups:', error);
-        document.getElementById('groups-container').innerHTML = 
-          '<div class="error">Failed to load groups</div>';
+        document.getElementById('groups-container').innerHTML = '<div class="error">Failed to load groups</div>';
       }
     }
 
@@ -391,6 +398,7 @@
 
       let html = '<div class="list-group">';
       groupsData.forEach(group => {
+        // Count feeds assigned to this group
         const feedCount = feedsData.filter(f => f.groupName === group.name).length;
         
         html += `
