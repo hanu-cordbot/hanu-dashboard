@@ -39,10 +39,6 @@
 
     <!-- Main Content -->
     <div id="main-content" class="hidden">
-      <div class="stat-card">
-        <div class="stat-value" id="bot-status">Offline</div>
-        <div class="stat-label">🤖 Bot Status</div>
-      </div>
 
       <!-- Feed Management -->
       <div class="section">
@@ -185,13 +181,7 @@
       try {
         console.log('📊 Loading dashboard data...');
         
-        // Load channels before feeds for mapping UI
-        await loadChannels().catch(err => console.error('Channels load failed:', err));
-        // Load feeds (private API)
-        await loadFeeds();
-        // Load group definitions for management UI
-        await loadGroups().catch(err => console.error('Groups load failed:', err));
-        // Load feeds (private API) and build channel and group UI
+        // Load feeds, channels, groups, mappings, and metadata in one call
         await loadFeeds();
         // Load other data, catching errors individually
         await loadSystemOverview().catch(err => console.error('Overview load failed:', err));
@@ -235,24 +225,23 @@
       }
     }
 
-    // Load feeds (public feed list)
+    // Load feeds, channels, groups, mappings, and metadata
     async function loadFeeds() {
       const container = document.getElementById('feeds-container');
       container.innerHTML = '<div class="loading">Loading feeds...</div>';
       try {
-        console.log('🔎 Fetching feeds from private API');
-        const data = await HanuAPI.getFeeds();
-        console.log('📥 Feeds data received:', data);
-        // Capture raw mapping, metadata, and group data
+        console.log('🔎 Fetching public dashboard data');
+        const data = await HanuAPI.getPublicFeeds();
+        console.log('📥 Public data received:', data);
+        // Unpack data
+        feedsData = data.feeds || [];
+        channelsData = data.channels || [];
         mappingsMap = data.mappings || {};
         metadataMap = data.metadata || {};
         groupsMap = data.groups || {};
-        // Build feed list and apply mappings
-        feedsData = data.feeds || [];
+        // Apply mappings to feed objects
         feedsData.forEach(feed => {
-          // apply channel mapping
           feed.channelId = mappingsMap[feed.url] || '';
-          // apply group mapping
           feed.groupName = '';
           for (const [gName, urls] of Object.entries(groupsMap)) {
             if (Array.isArray(urls) && urls.includes(feed.url)) {
@@ -260,64 +249,57 @@
               break;
             }
           }
-          // override title if provided in metadata
           if (metadataMap[feed.url]?.title) {
             feed.title = metadataMap[feed.url].title;
           }
         });
+        // Derive group list
+        groupsData = Object.keys(groupsMap).map(name => ({ name, urls: groupsMap[name] }));
+        // Render all UI
         renderFeeds();
-        // Update channel UI and test selects after feeds load
         renderChannels();
+        renderGroups();
         populateTestSelects();
       } catch (error) {
-        console.error('Failed to load feeds:', error);
+        console.error('Failed to load dashboard data:', error);
         container.innerHTML = '<div class="error">Failed to load feeds</div>';
       }
     }
 
-    // Render feeds list
+    // Render feeds list with fixed columns for feed info, channel, and group
     function renderFeeds() {
       const container = document.getElementById('feeds-container');
-      
       if (feedsData.length === 0) {
         container.innerHTML = '<div class="empty-state">No feeds configured yet. Add one above!</div>';
         return;
       }
-
       let html = '<div class="list-group">';
       feedsData.forEach(feed => {
-        // Status badge: active or inactive label
-        const statusBadge = feed.isActive ?
-          '<span class="badge bg-success">Active</span>' :
-          '<span class="badge bg-warning">Inactive</span>';
-        
         html += `
-          <div class="list-item">
-            <div class="flex-between">
-              <div>
-                <div class="item-title">${feed.title || 'Untitled Feed'}</div>
-                <div class="item-subtitle">${feed.url}</div>
-                <div class="mapping-controls">
-                  <select class="mapping-select" onchange="updateFeedMapping('${feed.url}', this.value)">
-                    <option value="">Not mapped</option>
-                    ${channelsData.map(c => `<option value="${c.id}" ${c.id == feed.channelId ? 'selected' : ''}>${c.name || c.id}</option>`).join('')}
-                  </select>
-                  <select class="mapping-select" onchange="updateFeedGroup('${feed.url}', this.value)">
-                    <option value="">No group</option>
-                    ${groupsData.map(g => `<option value="${g.name}" ${g.name === feed.groupName ? 'selected' : ''}>${g.name}</option>`).join('')}
-                  </select>
-                </div>
-              </div>
-              <div class="item-actions">
-                ${statusBadge}
-                <button onclick="removeFeed('${feed.url}')" class="btn btn-sm btn-danger">🗑️</button>
-              </div>
+          <div class="list-item" style="display:grid; grid-template-columns:1fr 150px 150px auto; align-items:center; column-gap:10px;">
+            <div>
+              <div class="item-title">${feed.title || 'Untitled Feed'}</div>
+              <div class="item-subtitle">${feed.url}</div>
+            </div>
+            <div>
+              <select class="mapping-select" onchange="updateFeedMapping('${feed.url}', this.value)">
+                <option value="">Not mapped</option>
+                ${channelsData.map(c => `<option value="${c.id}" ${c.id == feed.channelId ? 'selected' : ''}>${c.name || c.id}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <select class="mapping-select" onchange="updateFeedGroup('${feed.url}', this.value)">
+                <option value="">No group</option>
+                ${groupsData.map(g => `<option value="${g.name}" ${g.name === feed.groupName ? 'selected' : ''}>${g.name}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <button onclick="removeFeed('${feed.url}')" class="btn btn-sm btn-danger">🗑️</button>
             </div>
           </div>
         `;
       });
       html += '</div>';
-      
       container.innerHTML = html;
     }
 
@@ -369,22 +351,11 @@
       container.innerHTML = html;
     }
 
-    // Load groups from the last /api/feeds response mapping
-    // Load groups from last feeds result and render
-    // Load group definitions and render management UI
-    async function loadGroups() {
-      try {
-        const data = await HanuAPI.getGroups();
-        // Normalize to array of group names
-        const raw = data.groups ?? data;
-        groupsData = Array.isArray(raw)
-          ? raw.map(name => ({ name }))
-          : Object.keys(raw).map(name => ({ name }));
-        renderGroups();
-      } catch (error) {
-        console.error('Failed to load groups:', error);
-        document.getElementById('groups-container').innerHTML = '<div class="error">Failed to load groups</div>';
-      }
+    // Render groups list based on feed endpoint mapping
+    function loadGroups() {
+      // Derive group names from groupsMap keys
+      groupsData = Object.keys(groupsMap || {}).map(name => ({ name }));
+      renderGroups();
     }
 
     // Render groups list
@@ -672,7 +643,7 @@
       try {
         await HanuAPI.addGroup(groupName);
         document.getElementById('new-group-name').value = '';
-        await loadGroups();
+        await loadFeeds();
         showAlert('Group created successfully! 📂', 'success');
       } catch (error) {
         showAlert('Failed to create group: ' + error.message, 'danger');
@@ -685,7 +656,7 @@
 
       try {
         await HanuAPI.renameGroup(oldName, newName);
-        await loadGroups();
+        await loadFeeds();
         showAlert('Group renamed successfully! ✏️', 'success');
       } catch (error) {
         showAlert('Failed to rename group: ' + error.message, 'danger');
@@ -697,7 +668,7 @@
 
       try {
         await HanuAPI.removeGroup(groupName);
-        await loadGroups();
+        await loadFeeds();
         showAlert('Group removed successfully! 🗑️', 'success');
       } catch (error) {
         showAlert('Failed to remove group: ' + error.message, 'danger');
