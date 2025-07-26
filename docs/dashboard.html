@@ -561,36 +561,37 @@
 
     // Load recent activity
     async function loadRecentActivity() {
-      // Mock data for now - replace with real API when available
-      const activities = [
-        { time: new Date(Date.now() - 2 * 60 * 1000), action: 'New posts processed', details: '3 posts from CLB Dynamic HANU', type: 'success' },
-        { time: new Date(Date.now() - 15 * 60 * 1000), action: 'Bot run completed', details: 'Processed 44 feeds successfully', type: 'info' },
-        { time: new Date(Date.now() - 32 * 60 * 1000), action: 'Feed added', details: 'New RSS feed configured', type: 'success' },
-        { time: new Date(Date.now() - 67 * 60 * 1000), action: 'Channel updated', details: 'Channel name refreshed from Discord', type: 'info' },
-        { time: new Date(Date.now() - 125 * 60 * 1000), action: 'Dashboard accessed', details: 'Admin logged in', type: 'info' }
-      ];
+      // Fetch recent activity logs from backend
+      let activities;
+      try {
+        activities = await HanuAPI.getActivityLogs();
+      } catch (error) {
+        console.error('Activity load failed:', error);
+        activities = [];
+      }
 
       const container = document.getElementById('activity-feed');
       
+      // Build activity list UI
       let html = '<div class="activity-list">';
+      const iconMap = { success: '✅', warning: '⚠️', error: '❌', info: '📋' };
       activities.forEach(activity => {
-        const iconMap = {
-          success: '✅',
-          warning: '⚠️',
-          error: '❌',
-          info: '📋'
-        };
-
+        const time = new Date(activity.time);
         html += `
-          <div class="activity-item">
-            <div class="activity-icon">${iconMap[activity.type]}</div>
-            <div class="activity-content">
-              <div class="activity-title">${activity.action}</div>
-              <div class="activity-details">${activity.details}</div>
-              <div class="activity-time">${formatDate(activity.time)}</div>
-            </div>
-          </div>
-        `;
+          <details class="activity-item">
+            <summary>
+              <div class="activity-icon">${iconMap[activity.type] || ''}</div>
+              <div class="activity-summary">
+                <span class="activity-title">${activity.action}</span>
+                <span class="activity-time">${formatDate(time)}</span>
+              </div>
+            </summary>`;
+        if (typeof activity.details === 'string') {
+          html += `<div class="activity-details">${activity.details}</div>`;
+        } else {
+          html += `<div class="activity-details"><pre>${JSON.stringify(activity.details, null, 2)}</pre></div>`;
+        }
+        html += `</details>`;
       });
       html += '</div>';
 
