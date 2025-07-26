@@ -53,6 +53,23 @@
           <input type="url" id="new-feed-url" placeholder="Enter RSS feed URL" style="flex: 1; margin-right: 10px;">
           <button onclick="addFeed()" class="btn btn-primary">➕ Add Feed</button>
         </div>
+        <!-- Dashboard view controls -->
+        <div class="controls">
+          <label>View:</label>
+          <a href="#" onclick="setView('flat')" id="flat-link">Flat</a>
+          <a href="#" onclick="setView('grouped')" class="active" id="grouped-link">Grouped</a>
+          <label>Group by:</label>
+          <a href="#" onclick="setGroupBy('category')" id="group-category">Category</a>
+          <a href="#" onclick="setGroupBy('status')" class="active" id="group-status">Status</a>
+          <label>Sort by:</label>
+          <a href="#" onclick="setSortBy('name')" id="sort-name">Name</a>
+          <a href="#" onclick="setSortBy('date')" class="active" id="sort-date">Date ↑</a>
+          <a href="#" onclick="setSortBy('channel')" id="sort-channel">Channel</a>
+          <label>Filter:</label>
+          <a href="#" onclick="setFilter('all')" class="active" id="filter-all">All</a>
+          <a href="#" onclick="setFilter('active')" id="filter-active">Active</a>
+          <a href="#" onclick="setFilter('inactive')" id="filter-inactive">Inactive</a>
+        </div>
         <div id="feeds-container">
           <div class="loading">Loading feeds...</div>
         </div>
@@ -181,6 +198,46 @@
     let performanceChart = null;
     let refreshInterval = null;
 
+    // View, grouping, sorting, filtering state
+    let currentView = 'grouped';
+    let currentGroupBy = 'status';
+    let currentSort = 'date';
+    let currentFilter = 'all';
+    const sortOrder = { name: 'asc', date: 'asc', channel: 'asc' };
+
+    // Control functions copied from index.html
+    function setView(view) {
+      currentView = view;
+      document.getElementById('flat-link').classList.toggle('active', view === 'flat');
+      document.getElementById('grouped-link').classList.toggle('active', view === 'grouped');
+      renderFeeds();
+    }
+
+    function setGroupBy(groupBy) {
+      currentGroupBy = groupBy;
+      document.getElementById('group-category').classList.toggle('active', groupBy === 'category');
+      document.getElementById('group-status').classList.toggle('active', groupBy === 'status');
+      renderFeeds();
+    }
+
+    function setSortBy(sort) {
+      if (currentSort === sort) sortOrder[sort] = sortOrder[sort] === 'asc' ? 'desc' : 'asc'; else currentSort = sort;
+      ['name','date','channel'].forEach(k => document.getElementById('sort-'+k).classList.toggle('active', k===sort));
+      renderFeeds();
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      ['all','active','inactive'].forEach(k => document.getElementById('filter-'+k).classList.toggle('active', k===filter));
+      renderFeeds();
+    }
+
+    function toggleGroup(groupId) {
+      const content = document.getElementById(groupId);
+      const header = content.previousElementSibling;
+      content.classList.toggle('collapsed');
+      header.classList.toggle('collapsed');
+    }
 
     // Load all dashboard data
     async function loadDashboardData() {
@@ -279,33 +336,88 @@
         container.innerHTML = '<div class="empty-state">No feeds configured yet. Add one above!</div>';
         return;
       }
-      let html = '<div class="list-group">';
-      feedsData.forEach(feed => {
-        html += `
-          <div class="list-item" style="display:grid; grid-template-columns:1fr 150px 150px auto; align-items:center; column-gap:10px;">
-            <div>
-              <div class="item-title">${feed.title || 'Untitled Feed'}</div>
-              <div class="item-subtitle">${feed.url}</div>
-            </div>
-            <div>
-              <select class="mapping-select" onchange="updateFeedMapping('${feed.url}', this.value)">
-                <option value="">Not mapped</option>
-                ${channelsData.map(c => `<option value="${c.id}" ${c.id == feed.channelId ? 'selected' : ''}>${c.name || c.id}</option>`).join('')}
-              </select>
-            </div>
-            <div>
-              <select class="mapping-select" onchange="updateFeedGroup('${feed.url}', this.value)">
-                <option value="">No group</option>
-                ${groupsData.map(g => `<option value="${g.name}" ${g.name === feed.groupName ? 'selected' : ''}>${g.name}</option>`).join('')}
-              </select>
-            </div>
-            <div>
-              <button onclick="removeFeed('${feed.url}')" class="btn btn-sm btn-danger">🗑️</button>
-            </div>
-          </div>
-        `;
+      // Apply filtering
+      let list = feedsData.filter(feed => {
+        if (currentFilter === 'all') return true;
+        const isActive = !!feed.channelId;
+        return currentFilter === 'active' ? isActive : !isActive;
       });
-      html += '</div>';
+      // Apply sorting
+      list.sort((a, b) => {
+        let res = 0;
+        if (currentSort === 'name') {
+          res = (a.title || a.url).localeCompare(b.title || b.url);
+        } else if (currentSort === 'channel') {
+          const nameA = (channelsData.find(c => c.id == a.channelId)?.name || '');
+          const nameB = (channelsData.find(c => c.id == b.channelId)?.name || '');
+          res = nameA.localeCompare(nameB);
+        } else if (currentSort === 'group') {
+          res = (a.groupName || '').localeCompare(b.groupName || '');
+        }
+        return sortOrder[currentSort] === 'asc' ? res : -res;
+      });
+      if (currentView === 'grouped') {
+        renderGroupedView(list);
+      } else {
+        renderFlatView(list);
+      }
+    }
+
+    function renderFlatView(list) {
+      const container = document.getElementById('feeds-container');
+      let html = '<table class="feeds-table"><thead><tr><th>Name</th><th>Status</th><th>Channel</th><th>Group</th><th>Actions</th></tr></thead><tbody>';
+      list.forEach(feed => {
+        const title = feed.title || 'Untitled Feed';
+        const url = feed.url;
+        const isActive = !!feed.channelId;
+        html += `
+          <tr>
+            <td><div class="feed-name">${title}</div><div class="feed-url" style="color:#6c757d;font-size:0.9rem;">${url}</div></td>
+            <td><span class="status ${isActive ? 'status-active' : 'status-inactive'}">${isActive ? 'Active' : 'Inactive'}</span></td>
+            <td><select class="mapping-select" onchange="updateFeedMapping('${feed.url}', this.value)"><option value="">Not mapped</option>${channelsData.map(c => `<option value="${c.id}" ${c.id==feed.channelId?'selected':''}>${c.name||c.id}</option>`).join('')}</select></td>
+            <td><select class="mapping-select" onchange="updateFeedGroup('${feed.url}', this.value)"><option value="">No group</option>${groupsData.map(g => `<option value="${g.name}" ${g.name===feed.groupName?'selected':''}>${g.name}</option>`).join('')}</select></td>
+            <td><button onclick="removeFeed('${feed.url}')" class="btn btn-sm btn-danger">🗑️</button></td>
+          </tr>`;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function renderGroupedView(list) {
+      const container = document.getElementById('feeds-container');
+      const groups = {};
+      list.forEach(feed => {
+        const key = currentGroupBy === 'category' ? (feed.groupName || 'Other') : (feed.channelId ? 'Mapped' : 'Unmapped');
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(feed);
+      });
+      let html = '';
+      Object.keys(groups).sort().forEach(group => {
+        const feeds = groups[group];
+        const id = `group-${group.replace(/\s+/g,'-').toLowerCase()}`;
+        const count = feeds.length;
+        html += `
+          <div class="group-section">
+            <div class="group-header" onclick="toggleGroup('${id}')">
+              <span class="group-arrow">▼</span> ${group} <span class="group-count">${count}</span>
+            </div>
+            <div class="group-content" id="${id}">
+              <table class="feeds-table"><thead><tr><th>Name</th><th>Status</th><th>Channel</th><th>Group</th><th>Actions</th></tr></thead><tbody>`;
+        feeds.forEach(feed => {
+          const title = feed.title || 'Untitled Feed';
+          const url = feed.url;
+          const isActive = !!feed.channelId;
+          html += `
+                <tr>
+                  <td><div class="feed-name">${title}</div><div class="feed-url" style="color:#6c757d;font-size:0.9rem;">${url}</div></td>
+                  <td><span class="status ${isActive ? 'status-active' : 'status-inactive'}">${isActive ? 'Active' : 'Inactive'}</span></td>
+                  <td><select class="mapping-select" onchange="updateFeedMapping('${feed.url}', this.value)"><option value="">Not mapped</option>${channelsData.map(c => `<option value="${c.id}" ${c.id==feed.channelId?'selected':''}>${c.name||c.id}</option>`).join('')}</select></td>
+                  <td><select class="mapping-select" onchange="updateFeedGroup('${feed.url}', this.value)"><option value="">No group</option>${groupsData.map(g => `<option value="${g.name}" ${g.name===feed.groupName?'selected':''}>${g.name}</option>`).join('')}</select></td>
+                  <td><button onclick="removeFeed('${feed.url}')" class="btn btn-sm btn-danger">🗑️</button></td>
+                </tr>`;
+        });
+        html += '</tbody></table></div></div>';
+      });
       container.innerHTML = html;
     }
 
