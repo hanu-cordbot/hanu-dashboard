@@ -924,24 +924,14 @@
         return;
       }
       try {
-        // Pick a random feed
+        // Trigger proxy service to handle random post
         const feed = feedsData[Math.floor(Math.random() * feedsData.length)];
-        // Get entries for that feed
-        const entries = await HanuAPI.getTestEntries(feed.url);
-        if (!entries || entries.length === 0) {
-          showAlert('No entries found for feed: ' + (feed.title || feed.url), 'warning');
-          return;
-        }
-        // Pick a random entry
-        const entry = entries[Math.floor(Math.random() * entries.length)];
-        // Send the entry content to Discord
-        const message = entry.content || entry.link || entry.title || 'No content';
-        const result = await HanuAPI.testDiscord(channelId, message);
+        const result = await runBotTest(HanuAuth.getToken(), feed.url);
         document.getElementById('test-results').classList.remove('hidden');
-        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
-        showAlert('Random post sent! 🚀', 'success');
+        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(await result.json(), null, 2)}</pre>`;
+        showAlert('Random post via proxy sent! 🚀', 'success');
       } catch (error) {
-        showAlert('Failed to send random post: ' + error.message, 'danger');
+        showAlert('Failed to send random post via proxy: ' + error.message, 'danger');
       }
     };
 
