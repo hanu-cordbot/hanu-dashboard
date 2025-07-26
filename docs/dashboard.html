@@ -190,7 +190,11 @@
     let refreshInterval = null;
 
     // Initialize - EXACTLY like prompt editor does it
-    document.addEventListener('DOMContentLoaded', async () => {
+    (async () => {
+      // Wait for DOM ready if not already
+      if (document.readyState === 'loading') {
+        await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+      }
       console.log('🚀 Dashboard initializing...');
       
       // Setup auth UI FIRST (like prompt editor)
