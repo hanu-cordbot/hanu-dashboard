@@ -182,12 +182,13 @@
       try {
         console.log('📊 Loading dashboard data...');
         
-        // Load feeds first to ensure visible data
+        // Load channels and groups before feeds for mapping UI
+        await loadChannels().catch(err => console.error('Channels load failed:', err));
+        await loadGroups().catch(err => console.error('Groups load failed:', err));
+        // Load feeds with channel and group info
         await loadFeeds();
         // Load other data, catching errors individually
         await loadSystemOverview().catch(err => console.error('Overview load failed:', err));
-        await loadChannels().catch(err => console.error('Channels load failed:', err));
-        await loadGroups().catch(err => console.error('Groups load failed:', err));
         await loadRecentActivity().catch(err => console.error('Activity load failed:', err));
         await loadHealthMetrics().catch(err => console.error('Health load failed:', err));
         
@@ -233,13 +234,15 @@
       const container = document.getElementById('feeds-container');
       container.innerHTML = '<div class="loading">Loading feeds...</div>';
       try {
-        console.log('🔎 Fetching feeds from public API');
-        const response = await fetch('https://hanu-cordbot.snacky496.workers.dev/api/public/feeds');
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
+        console.log('🔎 Fetching feeds from private API');
+        const data = await HanuAPI.getFeeds();
         console.log('📥 Feeds data received:', data);
-        feedsData = data.feeds || [];
+        feedsData = data.feeds || data || [];
         renderFeeds();
+        // Update channel and group displays after feeds load
+        renderChannels();
+        renderGroups();
+        populateTestSelects();
       } catch (error) {
         console.error('Failed to load feeds:', error);
         container.innerHTML = '<div class="error">Failed to load feeds</div>';
@@ -267,8 +270,16 @@
               <div>
                 <div class="item-title">${feed.title || 'Untitled Feed'}</div>
                 <div class="item-subtitle">${feed.url}</div>
-                ${feed.channelId ? `<small>→ Channel: ${feed.channelName || feed.channelId}</small>` : ''}
-                ${feed.groupName ? `<small>→ Group: ${feed.groupName}</small>` : ''}
+                <div class="mapping-controls">
+                  <select class="mapping-select" onchange="updateFeedMapping('${feed.url}', this.value)">
+                    <option value="">Not mapped</option>
+                    ${channelsData.map(c => `<option value="${c.id}" ${c.id == feed.channelId ? 'selected' : ''}>${c.name || c.id}</option>`).join('')}
+                  </select>
+                  <select class="mapping-select" onchange="updateFeedGroup('${feed.url}', this.value)">
+                    <option value="">No group</option>
+                    ${groupsData.map(g => `<option value="${g.name}" ${g.name === feed.groupName ? 'selected' : ''}>${g.name}</option>`).join('')}
+                  </select>
+                </div>
               </div>
               <div class="item-actions">
                 ${statusBadge}
@@ -658,6 +669,30 @@
         showAlert('Group removed successfully! 🗑️', 'success');
       } catch (error) {
         showAlert('Failed to remove group: ' + error.message, 'danger');
+      }
+    };
+
+    // Update feed-to-channel mapping
+    window.updateFeedMapping = async function(feedUrl, channelId) {
+      try {
+        await HanuAPI.updateFeedMapping(feedUrl, channelId || null);
+        await loadChannels();
+        await loadFeeds();
+        showAlert('Feed channel mapping updated', 'success');
+      } catch (error) {
+        showAlert('Failed to update channel mapping: ' + error.message, 'danger');
+      }
+    };
+
+    // Update feed-to-group mapping
+    window.updateFeedGroup = async function(feedUrl, groupName) {
+      try {
+        await HanuAPI.updateFeedGroup(feedUrl, groupName || null);
+        await loadGroups();
+        await loadFeeds();
+        showAlert('Feed group mapping updated', 'success');
+      } catch (error) {
+        showAlert('Failed to update group mapping: ' + error.message, 'danger');
       }
     };
 
