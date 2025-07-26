@@ -458,6 +458,7 @@
                 <tr>
                   <td><div class="feed-name">${title}</div><div class="feed-url" style="color:#6c757d;font-size:0.9rem;">${url}</div></td>
                   <td><span class="status ${isActive ? 'status-active' : 'status-inactive'}">${isActive ? 'Active' : 'Inactive'}</span></td>
+                  <td class="feed-date">${formatDate(metadataMap[feed.url]?.last_post)}</td>
                   <td><select class="mapping-select" onchange="updateFeedMapping('${feed.url}', this.value)"><option value="">Not mapped</option>${channelsData.map(c => `<option value="${c.id}" ${c.id==feed.channelId?'selected':''}>${c.name||c.id}</option>`).join('')}</select></td>
                   <td><select class="mapping-select" onchange="updateFeedGroup('${feed.url}', this.value)"><option value="">No group</option>${groupsData.map(g => `<option value="${g.name}" ${g.name===feed.groupName?'selected':''}>${g.name}</option>`).join('')}</select></td>
                   <td><button onclick="removeFeed('${feed.url}')" class="btn btn-sm btn-danger">🗑️</button></td>
@@ -988,6 +989,14 @@
       if (refreshInterval) clearInterval(refreshInterval);
       if (performanceChart) performanceChart.destroy();
     });
+    
+    // Expose control functions globally for inline onclick handlers
+    window.setView = setView;
+    window.setGroupBy = setGroupBy;
+    window.setSortBy = setSortBy;
+    window.setFilter = setFilter;
+    window.toggleGroup = toggleGroup;
+    window.sendRandomPost = sendRandomPost;
   </script>
 </body>
 </html>
