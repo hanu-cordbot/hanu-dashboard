@@ -521,13 +521,16 @@ export default HanuAPIInstance;
 
 
 export async function runBotTest(authToken, feedUrl = '') {
-  return fetch(`${API_ORIGIN}/run`, {
-    method : 'POST',
+  // Use the railway proxy /run endpoint to trigger a random post test
+  const url = `${HanuAPIInstance.railwayUrl}/run`;
+  return fetch(url, {
+    method: 'POST',
     headers: {
-      'X-Auth'        : authToken,
-      'X-Test-Mode'   : '1',
+      'Content-Type': 'application/json',
+      'X-Auth': authToken,
+      'X-Test-Mode': '1',
       'X-Skip-Filters': '1',
-      'X-Test-Feed'   : feedUrl
+      'X-Test-Feed': feedUrl
     }
   });
 }
