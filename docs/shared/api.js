@@ -33,7 +33,8 @@ class HanuAPI {
       '/run', '/health', '/get-current-prompt', '/save-current-prompt',
       '/test-gemini', '/test-entries', '/all-feeds', '/random-entry', '/test-discord'
     ];
-    const isRailwayEndpoint = railwayEndpoints.includes(pathOnly);
+    // Force /test-entries with query to be routed to Railway as well
+    const isRailwayEndpoint = endpoint.startsWith('/test-entries') || railwayEndpoints.includes(pathOnly);
     const baseUrl = isRailwayEndpoint ? this.railwayUrl : this.baseUrl;
     const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
     
