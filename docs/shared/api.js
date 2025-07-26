@@ -311,8 +311,10 @@ class HanuAPI {
   }
 
   async getTestEntries(feedUrl = null) {
-    const endpoint = feedUrl ? `/test-entries?feed=${encodeURIComponent(feedUrl)}` : '/test-entries';
-    return this.get(endpoint); // Railway endpoint
+    // Explicitly call Railway test-entries endpoint
+    const path = feedUrl ? `/test-entries?feed=${encodeURIComponent(feedUrl)}` : '/test-entries';
+    const url = `${this.railwayUrl}${path}`;
+    return this.request(url, { method: 'GET' });
   }
 
   async getRandomEntry() {
