@@ -156,6 +156,19 @@
     import HanuAuth from './shared/auth.js';
     import HanuAPI, { runBotTest } from './shared/api.js';
 
+    // Ensure dashboard initializes only after DOM ready and authentication
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log('🔔 DOM loaded, starting auth boot');
+      await HanuAuth.requireLogin();
+      console.log('✅ Auth complete, showing dashboard');
+      document.getElementById('auth-section').classList.add('hidden');
+      document.getElementById('main-content').classList.remove('hidden');
+      console.log('📊 Loading all dashboard data');
+      await loadDashboardData();
+      setupPerformanceChart();
+      startAutoRefresh();
+    });
+
     let feedsData = [];
     let channelsData = [];
     let groupsData = [];
