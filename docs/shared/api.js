@@ -122,6 +122,25 @@ class HanuAPI {
   }
 
   // ===== SYSTEM STATUS & HEALTH =====
+  // Get overall system status
+  async getSystemStatus() {
+    try {
+      return await this.get('/api/status');
+    } catch (error) {
+      console.warn('System status endpoint not available:', error);
+      return { status: 'unknown' };
+    }
+  }
+
+  // Fetch diagnostic logs as recent activity
+  async getDiagnostics() {
+    try {
+      return await this.get('/api/diagnostics');
+    } catch (error) {
+      console.warn('Diagnostics endpoint not available:', error);
+      return [];
+    }
+  }
 
   async getPublicStats() {
     try {
@@ -146,6 +165,7 @@ class HanuAPI {
 
   async getActivityLogs() {
     try {
+      // Fetch recent activity events from backend
       return await this.get('/api/activity');
     } catch (error) {
       console.warn('Activity logs endpoint not available:', error);
@@ -450,8 +470,6 @@ class HanuAPI {
       return { stats: {} };
     }
   }
-
-  // ===== RECENT ACTIVITY LOGS =====
   async getActivityLogs() {
     try {
       // Fetch recent activity events from backend
