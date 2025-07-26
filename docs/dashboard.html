@@ -44,48 +44,6 @@
         <div class="stat-label">🤖 Bot Status</div>
       </div>
 
-      <!-- Feed Tracker (copied from index.html) -->
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-value" id="active-feeds">--</div>
-          <div class="stat-label">Active Feeds</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value" id="total-feeds">--</div>
-          <div class="stat-label">Total Monitored</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value" id="last-update">--</div>
-          <div class="stat-label">Last Update</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value" id="system-status">--</div>
-          <div class="stat-label">System Status</div>
-        </div>
-      </div>
-      <div class="controls">
-        <label>View:</label>
-        <a href="#" onclick="setView('flat')" id="flat-link">Flat</a>
-        <a href="#" onclick="setView('grouped')" class="active" id="grouped-link">Grouped</a>
-        <div class="group-by-section" id="group-by-section">
-          <label>Group by:</label>
-          <a href="#" onclick="setGroupBy('category')" id="group-category">Category</a>
-          <a href="#" onclick="setGroupBy('status')" class="active" id="group-status">Status</a>
-        </div>
-        <label>Sort by:</label>
-        <a href="#" onclick="setSortBy('name')" id="sort-name">Name</a>
-        <a href="#" onclick="setSortBy('date')" class="active" id="sort-date">Date ↑</a>
-        <a href="#" onclick="setSortBy('channel')" id="sort-channel">Channel</a>
-        <label>Filter:</label>
-        <a href="#" onclick="setFilter('all')" class="active" id="filter-all">All</a>
-        <a href="#" onclick="setFilter('active')" id="filter-active">Active</a>
-        <a href="#" onclick="setFilter('inactive')" id="filter-inactive">Inactive</a>
-      </div>
-      <div id="loading-state" class="loading">📡 Loading feed data...</div>
-      <div id="error-state" class="error" style="display: none;">
-        ⚠️ Unable to load feed data. <button onclick="loadFeeds()" style="margin-left: 10px;">Retry</button>
-      </div>
-      <div id="feeds-container" style="display: none;"></div>
       <!-- Feed Management -->
       <div class="section">
         <h2>📡 Feed Management</h2>
@@ -218,52 +176,6 @@
     let performanceChart = null;
     let refreshInterval = null;
 
-    // Initialize - EXACTLY like prompt editor does it
-    (async () => {
-      // Wait for DOM ready if not already
-      if (document.readyState === 'loading') {
-        await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
-      }
-      console.log('🚀 Dashboard initializing...');
-      
-      // Setup auth UI FIRST (like prompt editor)
-      HanuAuth.setupAuthUI();
-      
-      // Handle login success
-      HanuAuth.onLogin(async () => {
-        console.log('✅ User authenticated, showing dashboard...');
-        document.getElementById('auth-section').classList.add('hidden');
-        document.getElementById('main-content').classList.remove('hidden');
-        await loadDashboardData();
-        setupPerformanceChart();
-        startAutoRefresh();
-      });
-      
-      // Parse emojis
-      twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
-      
-      // Check if already authenticated (like prompt editor)
-      if (HanuAuth.isAuthenticated()) {
-        const isValid = await HanuAuth.testAuth();
-        if (isValid) {
-          document.getElementById('auth-section').classList.add('hidden');
-          document.getElementById('main-content').classList.remove('hidden');
-          await loadDashboardData();
-          setupPerformanceChart();
-          startAutoRefresh();
-        }
-      }
-    })();
-    
-    // Also ensure dashboard data loads once authentication completes
-    HanuAuth.requireLogin().then(async () => {
-      console.log('🚀 Auth-boot completed, loading dashboard data...');
-      document.getElementById('auth-section').classList.add('hidden');
-      document.getElementById('main-content').classList.remove('hidden');
-      await loadDashboardData();
-      setupPerformanceChart();
-      startAutoRefresh();
-    }).catch(err => console.error('Dashboard auth load failed:', err));
 
     // Load all dashboard data
     async function loadDashboardData() {
