@@ -957,13 +957,16 @@
 
     // Helper functions
     function formatDate(date) {
+      // Ensure input is converted to a Date object
+      const dt = new Date(date);
+      if (isNaN(dt)) return '';
       const now = new Date();
-      const diffMinutes = Math.floor((now - date) / (1000 * 60));
+      const diffMinutes = Math.floor((now - dt) / (1000 * 60));
       
       if (diffMinutes < 1) return 'Just now';
       if (diffMinutes < 60) return `${diffMinutes}m ago`;
       if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`;
-      return date.toLocaleDateString();
+      return dt.toLocaleDateString();
     }
 
     // Alert helper
