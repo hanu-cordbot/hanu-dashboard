@@ -123,27 +123,33 @@ class HanuAPI {
 
   // ===== SYSTEM STATUS & HEALTH =====
 
-  async getSystemStatus() {
-    return this.get('/api/status');
-  }
-
-  async getDiagnostics() {
-    return this.get('/api/diagnostics');
-  }
-
-  async getSystemStats() {
+  async getPublicStats() {
     try {
-      return await this.get('/api/stats');
+      const url = `${this.baseUrl}/api/public/stats`;
+      const response = await fetch(url, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
     } catch (error) {
-      console.warn('Stats endpoint not available, returning mock data');
-      return {
-        memory: 0,
-        cpu: 0,
-        activityRate: 0,
-        healthScore: 100,
-        activeFeedCount: 0,
-        feedCount: 0
-      };
+      console.warn('Public stats endpoint not available');
+      return { stats: {} };
+    }
+  }
+
+
+  // ===== RECENT ACTIVITY LOGS =====
+
+  async getActivityLogs() {
+    try {
+      return await this.get('/api/activity');
+    } catch (error) {
+      console.warn('Activity logs endpoint not available:', error);
+      return [];
     }
   }
 
@@ -445,6 +451,16 @@ class HanuAPI {
     }
   }
 
+  // ===== RECENT ACTIVITY LOGS =====
+  async getActivityLogs() {
+    try {
+      // Fetch recent activity events from backend
+      return await this.get('/api/activity');
+    } catch (error) {
+      console.warn('Activity logs endpoint not available:', error);
+      return [];
+    }
+  }
   // ===== UTILITY METHODS =====
 
   async healthCheck() {
