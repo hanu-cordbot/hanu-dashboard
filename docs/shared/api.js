@@ -155,8 +155,9 @@ class HanuAPI {
 
       return await response.json();
     } catch (error) {
-      console.warn('Public stats endpoint not available');
-      return { stats: {} };
+      console.warn('Public stats endpoint not available:', error);
+      // Provide defaults matching expected fields
+      return { feedCount: 0, feeds: [], activeFeedCount: 0, uptime: 0 };
     }
   }
 
@@ -164,11 +165,12 @@ class HanuAPI {
   // ===== RECENT ACTIVITY LOGS =====
 
   async getActivityLogs() {
+    // Use diagnostics endpoint and wrap in array for activity list
     try {
-      // Fetch recent activity events from backend
-      return await this.get('/api/activity');
+      const diag = await this.getDiagnostics();
+      return Array.isArray(diag) ? diag : [diag];
     } catch (error) {
-      console.warn('Activity logs endpoint not available:', error);
+      console.warn('Unable to load diagnostics for activity logs:', error);
       return [];
     }
   }
@@ -466,16 +468,18 @@ class HanuAPI {
 
       return await response.json();
     } catch (error) {
-      console.warn('Public stats endpoint not available');
-      return { stats: {} };
+      console.warn('Public stats endpoint not available:', error);
+      // Provide defaults for dashboard overview
+      return { feedCount: 0, feeds: [], activeFeedCount: 0, uptime: 0 };
     }
   }
+  // Note: real activity logs via diagnostics
   async getActivityLogs() {
     try {
-      // Fetch recent activity events from backend
-      return await this.get('/api/activity');
+      const diag = await this.getDiagnostics();
+      return Array.isArray(diag) ? diag : [diag];
     } catch (error) {
-      console.warn('Activity logs endpoint not available:', error);
+      console.warn('Unable to load diagnostics for activity logs:', error);
       return [];
     }
   }
