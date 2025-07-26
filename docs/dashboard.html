@@ -171,6 +171,9 @@
     });
     
     let feedsData = [];
+    let mappingsMap = {};
+    let metadataMap = {};
+    let groupsMap = {};
     let channelsData = [];
     let groupsData = [];
     let performanceChart = null;
@@ -237,7 +240,28 @@
         console.log('🔎 Fetching feeds from private API');
         const data = await HanuAPI.getFeeds();
         console.log('📥 Feeds data received:', data);
-        feedsData = data.feeds || data || [];
+        // Capture raw mapping, metadata, and group data
+        mappingsMap = data.mappings || {};
+        metadataMap = data.metadata || {};
+        groupsMap = data.groups || {};
+        // Merge into feed objects
+        feedsData = data.feeds || [];
+        feedsData.forEach(feed => {
+          // apply channel mapping
+          feed.channelId = mappingsMap[feed.url] || '';
+          // apply group mapping
+          feed.groupName = '';
+          for (const [gName, urls] of Object.entries(groupsMap)) {
+            if (Array.isArray(urls) && urls.includes(feed.url)) {
+              feed.groupName = gName;
+              break;
+            }
+          }
+          // override title if provided in metadata
+          if (metadataMap[feed.url]?.title) {
+            feed.title = metadataMap[feed.url].title;
+          }
+        });
         renderFeeds();
         // Update channel and group displays after feeds load
         renderChannels();
