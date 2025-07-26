@@ -498,8 +498,6 @@ if (typeof window !== 'undefined') {
 // Export for ES6 modules
 export default HanuAPIInstance;
 
-// Export for modules
-export default window.HanuAPI;
 
 export async function runBotTest(authToken, feedUrl = '') {
   return fetch(`${API_ORIGIN}/run`, {
