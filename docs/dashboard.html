@@ -284,15 +284,21 @@
           HanuAPI.getSystemStats()
         ]);
 
-        document.getElementById('total-feeds').textContent = statsData.feedCount || 0;
-        document.getElementById('active-channels').textContent = statsData.activeFeedCount || 0;
-        document.getElementById('posts-today').textContent = statusData.seenCount || 0;
-        document.getElementById('bot-status').textContent = statusData.workerStatus || 'Unknown';
+        // Update feed tracker stats if present
+        const activeFeedsEl = document.getElementById('active-feeds');
+        if (activeFeedsEl) {
+          activeFeedsEl.textContent = statsData.activeFeedCount || 0;
+          document.getElementById('total-feeds').textContent = statsData.feedCount || 0;
+          document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+          document.getElementById('system-status').textContent = statusData.workerStatus || 'Unknown';
+        }
+        // Also update bot status card
+        const botStatusEl = document.getElementById('bot-status');
+        if (botStatusEl) {
+          botStatusEl.textContent = statusData.workerStatus || 'Unknown';
+          botStatusEl.className = statusData.workerStatus === 'Running' ? 'stat-value success' : 'stat-value warning';
+        }
 
-        // Color code bot status
-        const statusElement = document.getElementById('bot-status');
-        const status = statusData.workerStatus || 'Unknown';
-        statusElement.className = status === 'Running' ? 'stat-value success' : 'stat-value warning';
 
       } catch (error) {
         console.error('Failed to load system overview:', error);
@@ -405,7 +411,9 @@
     async function loadGroups() {
       try {
         const data = await HanuAPI.getGroups();
-        groupsData = data.groups || [];
+        // Accept array or object with groups key
+        const raw = data.groups ?? data;
+        groupsData = Array.isArray(raw) ? raw : Object.values(raw);
         renderGroups();
       } catch (error) {
         console.error('Failed to load groups:', error);
@@ -524,6 +532,8 @@
     function setupPerformanceChart() {
       const ctx = document.getElementById('performance-chart').getContext('2d');
       
+      // Destroy existing chart if present
+      if (performanceChart) performanceChart.destroy();
       // Mock data - replace with real metrics when available
       const labels = [];
       const data = [];
