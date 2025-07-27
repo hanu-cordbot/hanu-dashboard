@@ -123,7 +123,8 @@
                 <option value="">Select channel...</option>
               </select>
               <textarea id="test-message" placeholder="Enter test message" rows="3" class="mb-10"></textarea>
-              <button onclick="testDiscordMessage()" class="btn btn-success">📤 Send Test Message</button>
+            <button onclick="testRunEndpoint()" class="btn btn-warning" style="margin-top:10px;">🧪 Test /run Endpoint</button>
+            <button onclick="resetSeenData()" class="btn btn-danger" style="margin-top:10px;">�️ Reset Seen Data</button>
             </div>
           </div>
           
@@ -699,6 +700,32 @@
       }
     };
 
+    // Test /run endpoint (triggers a bot run)
+    window.testRunEndpoint = async function() {
+      try {
+        showAlert('Triggering /run endpoint...', 'info');
+        const result = await HanuAPI.runBot();
+        document.getElementById('test-results').classList.remove('hidden');
+        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+        showAlert('Bot run triggered! 🚀', 'success');
+      } catch (error) {
+        showAlert('Failed to trigger /run: ' + error.message, 'danger');
+      }
+    };
+
+    // Reset seen data (flushes all seen posts)
+    window.resetSeenData = async function() {
+      try {
+        showAlert('Resetting seen data...', 'info');
+        const result = await HanuAPI.resetSeenData();
+        document.getElementById('test-results').classList.remove('hidden');
+        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+        showAlert('Seen data reset! 🗑️', 'success');
+      } catch (error) {
+        showAlert('Failed to reset seen data: ' + error.message, 'danger');
+      }
+    };
+
     window.testPost = async function() {
       try {
         showAlert('Running test post...', 'info');
@@ -914,19 +941,11 @@
         return;
       }
       try {
-        // Step 1: Get a random entry
-        const entryResult = await HanuAPI.getRandomEntry();
-        if (!entryResult.success || !entryResult.entry || !entryResult.entry.feed) {
-          showAlert('Failed to get a random entry', 'danger');
-          return;
-        }
-        // Step 2: Send the random entry to the selected channel using /test-feed
-        const testFeedResponse = await HanuAPI.post('/test-feed', {
-          feed_url: entryResult.entry.feed,
-          channel_id: channelId
-        });
+        // Use the /run endpoint to trigger a random post with main pipeline formatting
+        const response = await runBotTest(HanuAuth.getToken(), '', channelId);
+        const data = await response.json();
         document.getElementById('test-results').classList.remove('hidden');
-        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(testFeedResponse, null, 2)}</pre>`;
+        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
         showAlert('Random post sent to Discord! 🚀', 'success');
       } catch (error) {
         showAlert('Failed to send random post: ' + error.message, 'danger');
