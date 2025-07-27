@@ -560,15 +560,19 @@ export default HanuAPIInstance;
 
 export async function runBotTest(authToken, feedUrl = '') {
   // Use the railway proxy /run endpoint to trigger a random post test
+  // If feedUrl is empty, will trigger a random post; if channelId is provided, will send to that channel
   const url = `${HanuAPIInstance.railwayUrl}/run`;
+  let headers = {
+    'Content-Type': 'application/json',
+    'X-Auth': authToken,
+    'X-Test-Mode': '1',
+    'X-Skip-Filters': '1'
+  };
+  if (feedUrl) headers['X-Test-Feed'] = feedUrl;
+  // Accept third arg for channel
+  if (arguments.length > 2 && arguments[2]) headers['X-Test-Channel'] = arguments[2];
   return fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Auth': authToken,
-      'X-Test-Mode': '1',
-      'X-Skip-Filters': '1',
-      'X-Test-Feed': feedUrl
-    }
+    headers
   });
 }
