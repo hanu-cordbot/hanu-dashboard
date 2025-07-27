@@ -909,24 +909,27 @@
 
     window.sendRandomPost = async function() {
       const channelId = document.getElementById('test-channel-select').value;
-      const feedUrl = document.getElementById('test-feed-select').value;
       if (!channelId) {
         showAlert('Please select a channel', 'warning');
         return;
       }
-      if (!feedUrl) {
-        showAlert('Please select a feed', 'warning');
-        return;
-      }
       try {
-        // Trigger full feed test via Celery/dispatcher (uses runBotTest proxy)
-        const response = await runBotTest(HanuAuth.getToken(), feedUrl);
-        const data = await response.json();
+        // Step 1: Get a random entry
+        const entryResult = await HanuAPI.getRandomEntry();
+        if (!entryResult.success || !entryResult.entry || !entryResult.entry.feed) {
+          showAlert('Failed to get a random entry', 'danger');
+          return;
+        }
+        // Step 2: Send the random entry to the selected channel using /test-feed
+        const testFeedResponse = await HanuAPI.post('/test-feed', {
+          feed_url: entryResult.entry.feed,
+          channel_id: channelId
+        });
         document.getElementById('test-results').classList.remove('hidden');
-        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-        showAlert('Random post via dispatcher sent! 🚀', 'success');
+        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(testFeedResponse, null, 2)}</pre>`;
+        showAlert('Random post sent to Discord! 🚀', 'success');
       } catch (error) {
-        showAlert('Failed to send random post via dispatcher: ' + error.message, 'danger');
+        showAlert('Failed to send random post: ' + error.message, 'danger');
       }
     };
 
