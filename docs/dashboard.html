@@ -907,49 +907,34 @@
       }
     };
 
-    // Send a random post from a random feed to the selected channel
+    // Send one random entry from the selected feed to the selected channel
     window.sendRandomPost = async function() {
       const channelId = document.getElementById('test-channel-select').value;
+      const feedUrl = document.getElementById('test-feed-select').value;
       if (!channelId) {
         showAlert('Please select a channel', 'warning');
         return;
       }
-      if (feedsData.length === 0) {
-        showAlert('No feeds available to choose from', 'warning');
+      if (!feedUrl) {
+        showAlert('Please select a feed', 'warning');
         return;
       }
-      // Store original mappings to restore later
-      const originalMappings = feedsData.map(f => ({ url: f.url, channelId: f.channelId }));
       try {
-        // Unmap all feeds temporarily
-        for (const m of originalMappings) {
-          if (m.channelId) {
-            await HanuAPI.updateFeedMapping(m.url, null);
-          }
+        // Fetch recent test entries for the feed
+        const entries = await HanuAPI.getTestEntries(feedUrl);
+        if (!entries || entries.length === 0) {
+          showAlert('No entries available for this feed', 'warning');
+          return;
         }
-        // Pick random feed and map only it
-        const feed = feedsData[Math.floor(Math.random() * feedsData.length)];
-        await HanuAPI.updateFeedMapping(feed.url, channelId);
-        // Trigger proxy service to handle random post for the single feed
-        const result = await runBotTest(HanuAuth.getToken(), feed.url);
+        // Choose a random entry
+        const entry = entries[Math.floor(Math.random() * entries.length)];
+        // Send the entry content to Discord via test endpoint
+        const result = await HanuAPI.testDiscord(channelId, entry.content || entry.title, entry);
         document.getElementById('test-results').classList.remove('hidden');
-        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(await result.json(), null, 2)}</pre>`;
-        showAlert('Random post via proxy sent! 🚀', 'success');
+        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+        showAlert('Random post sent! 🚀', 'success');
       } catch (error) {
-        showAlert('Failed to send random post via proxy: ' + error.message, 'danger');
-      } finally {
-        // Restore original mappings for all feeds (remap or unmap accordingly)
-        for (const m of originalMappings) {
-          try {
-            // restore to original channel or unmap if none
-            await HanuAPI.updateFeedMapping(m.url, m.channelId || null);
-          } catch (e) {
-            console.warn('Failed to restore mapping for', m.url, e);
-          }
-        }
-        // Refresh feed data
-        await loadFeeds();
-        populateTestSelects();
+        showAlert('Failed to send random post: ' + error.message, 'danger');
       }
     };
 
