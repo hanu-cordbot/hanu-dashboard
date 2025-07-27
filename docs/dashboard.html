@@ -930,6 +930,12 @@
       } catch (error) {
         showAlert('Failed to send random post via proxy: ' + error.message, 'danger');
       }
+      // Revert the mapping to avoid persisting test settings
+      try {
+        await HanuAPI.updateFeedMapping(feed.url, null);
+      } catch (e) {
+        console.warn('Failed to revert test feed mapping:', e);
+      }
     };
 
     // Auto-refresh every 2 minutes
