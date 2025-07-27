@@ -907,7 +907,6 @@
       }
     };
 
-    // Send one random entry from the selected feed to the selected channel
     window.sendRandomPost = async function() {
       const channelId = document.getElementById('test-channel-select').value;
       const feedUrl = document.getElementById('test-feed-select').value;
@@ -920,21 +919,14 @@
         return;
       }
       try {
-        // Fetch recent test entries for the feed
-        const entries = await HanuAPI.getTestEntries(feedUrl);
-        if (!entries || entries.length === 0) {
-          showAlert('No entries available for this feed', 'warning');
-          return;
-        }
-        // Choose a random entry
-        const entry = entries[Math.floor(Math.random() * entries.length)];
-        // Send the entry content to Discord via test endpoint
-        const result = await HanuAPI.testDiscord(channelId, entry.content || entry.title, entry);
+        // Trigger full feed test via Celery/dispatcher (uses runBotTest proxy)
+        const response = await runBotTest(HanuAuth.getToken(), feedUrl);
+        const data = await response.json();
         document.getElementById('test-results').classList.remove('hidden');
-        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
-        showAlert('Random post sent! 🚀', 'success');
+        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        showAlert('Random post via dispatcher sent! 🚀', 'success');
       } catch (error) {
-        showAlert('Failed to send random post: ' + error.message, 'danger');
+        showAlert('Failed to send random post via dispatcher: ' + error.message, 'danger');
       }
     };
 
