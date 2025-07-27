@@ -182,7 +182,7 @@
   <!-- Scripts -->
   <script type="module">
     import HanuAuth from './shared/auth.js';
-    import HanuAPI, { runBotTest } from './shared/api.js';
+    import HanuAPI from './shared/api.js';
 
     // Initialization: wait for DOM and auth, then load dashboard
     document.addEventListener('DOMContentLoaded', async () => {
@@ -909,40 +909,45 @@
 
     // Send a random post from a random feed to the selected channel
     window.sendRandomPost = async function() {
+      // Retrieve selected channel
       const channelId = document.getElementById('test-channel-select').value;
       if (!channelId) {
         showAlert('Please select a channel', 'warning');
         return;
       }
-      if (feedsData.length === 0) {
-        showAlert('No feeds available to choose from', 'warning');
-        return;
+
+      // Determine which feed URL to test: selected or random
+      let feedUrl = document.getElementById('test-feed-select').value;
+      if (!feedUrl) {
+        if (feedsData.length === 0) {
+          showAlert('No feeds available to choose from', 'warning');
+          return;
+        }
+        // Pick a random feed URL
+        const randomFeed = feedsData[Math.floor(Math.random() * feedsData.length)];
+        feedUrl = randomFeed.url;
       }
+
       try {
-        // Determine which feed to post: selected or random
-        const selectedUrl = document.getElementById('test-feed-select').value;
-        let feed;
-        if (selectedUrl) {
-          feed = feedsData.find(f => f.url === selectedUrl);
+        // Fetch test entries for the chosen feed
+        const entries = await HanuAPI.getTestEntries(feedUrl);
+        if (!entries || entries.length === 0) {
+          showAlert('No entries found for this feed', 'warning');
+          return;
         }
-        if (!feed) {
-          // No specific feed selected or not found; pick random
-          feed = feedsData[Math.floor(Math.random() * feedsData.length)];
-        }
-        // Temporarily map this feed to the test channel so proxy will post
-        await HanuAPI.updateFeedMapping(feed.url, channelId);
-        const result = await runBotTest(HanuAuth.getToken(), feed.url);
+        // Pick a random entry to post
+        const entry = entries[Math.floor(Math.random() * entries.length)];
+
+        // Construct message content
+        const content = `${entry.title}\n${entry.link}`;
+
+        // Send test message to Discord
+        const result = await HanuAPI.testDiscord(channelId, content, entry);
         document.getElementById('test-results').classList.remove('hidden');
-        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(await result.json(), null, 2)}</pre>`;
-        showAlert('Random post via proxy sent! 🚀', 'success');
+        document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+        showAlert('Random post sent! 🚀', 'success');
       } catch (error) {
-        showAlert('Failed to send random post via proxy: ' + error.message, 'danger');
-      }
-      // Revert the mapping to avoid persisting test settings
-      try {
-        await HanuAPI.updateFeedMapping(feed.url, null);
-      } catch (e) {
-        console.warn('Failed to revert test feed mapping:', e);
+        showAlert('Failed to send random post: ' + error.message, 'danger');
       }
     };
 
