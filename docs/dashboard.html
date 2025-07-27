@@ -919,8 +919,16 @@
         return;
       }
       try {
-        // Trigger proxy service to handle random post
-        const feed = feedsData[Math.floor(Math.random() * feedsData.length)];
+        // Determine which feed to post: selected or random
+        const selectedUrl = document.getElementById('test-feed-select').value;
+        let feed;
+        if (selectedUrl) {
+          feed = feedsData.find(f => f.url === selectedUrl);
+        }
+        if (!feed) {
+          // No specific feed selected or not found; pick random
+          feed = feedsData[Math.floor(Math.random() * feedsData.length)];
+        }
         // Temporarily map this feed to the test channel so proxy will post
         await HanuAPI.updateFeedMapping(feed.url, channelId);
         const result = await runBotTest(HanuAuth.getToken(), feed.url);
