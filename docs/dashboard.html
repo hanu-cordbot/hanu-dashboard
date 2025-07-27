@@ -938,14 +938,13 @@
       } catch (error) {
         showAlert('Failed to send random post via proxy: ' + error.message, 'danger');
       } finally {
-        // Restore original mappings
+        // Restore original mappings for all feeds (remap or unmap accordingly)
         for (const m of originalMappings) {
-          if (m.channelId) {
-            try {
-              await HanuAPI.updateFeedMapping(m.url, m.channelId);
-            } catch (e) {
-              console.warn('Failed to restore mapping for', m.url, e);
-            }
+          try {
+            // restore to original channel or unmap if none
+            await HanuAPI.updateFeedMapping(m.url, m.channelId || null);
+          } catch (e) {
+            console.warn('Failed to restore mapping for', m.url, e);
           }
         }
         // Refresh feed data
