@@ -720,7 +720,17 @@
         const result = await HanuAPI.resetSeenData();
         document.getElementById('test-results').classList.remove('hidden');
         document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
-        showAlert('Seen data and thread mappings reset! 🗑️ This will create fresh threads on next run.', 'success');
+        
+        if (result.success) {
+          showAlert('Seen data and thread mappings reset! 🗑️ This will create fresh threads on next run.', 'success');
+        } else {
+          // Handle rate limit error specifically
+          if (result.error && result.error.includes("Too many API requests")) {
+            showAlert('⚠️ Only partial reset due to rate limits. This should still be enough to create new threads.', 'warning');
+          } else {
+            showAlert('Warning: ' + result.error, 'warning');
+          }
+        }
       } catch (error) {
         showAlert('Failed to reset data: ' + error.message, 'danger');
       }
