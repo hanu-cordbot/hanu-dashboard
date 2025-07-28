@@ -716,13 +716,13 @@
     // Reset seen data (flushes all seen posts)
     window.resetSeenData = async function() {
       try {
-        showAlert('Resetting seen data...', 'info');
+        showAlert('Resetting seen data and thread mappings...', 'info');
         const result = await HanuAPI.resetSeenData();
         document.getElementById('test-results').classList.remove('hidden');
         document.getElementById('test-results').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
-        showAlert('Seen data reset! 🗑️', 'success');
+        showAlert('Seen data and thread mappings reset! 🗑️ This will create fresh threads on next run.', 'success');
       } catch (error) {
-        showAlert('Failed to reset seen data: ' + error.message, 'danger');
+        showAlert('Failed to reset data: ' + error.message, 'danger');
       }
     };
 
